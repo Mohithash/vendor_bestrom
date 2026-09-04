@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: BestROM
+     SPDX-License-Identifier: Apache-2.0
+
+     The feed URL is hardcoded in the app at
+     packages/apps/Updater/app/src/main/res/values/strings.xml:33 and points at
+     VoltageOS's OTA repository. Without this override a BestROM build would
+     offer VoltageOS updates.
+-->
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="updater_server_url" translatable="false">https://raw.githubusercontent.com/Mohithash/bestrom_ota/17/{device}.json</string>
+    <string name="menu_changelog_url" translatable="false">https://raw.githubusercontent.com/Mohithash/bestrom_ota/17/changelog_<xliff:g id="device_name">%1$s</xliff:g>.txt</string>
+</resources>

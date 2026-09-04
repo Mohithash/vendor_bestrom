@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: BestROM
+     SPDX-License-Identifier: Apache-2.0
+
+     packages/apps/SetupWizard is the only setup wizard in the tree, so it is
+     rebranded rather than debloated. Most of its user-visible strings
+     interpolate os_name via xliff, so overriding that one string carries the
+     bulk of the rebrand; the four below are hardcoded and need their own.
+-->
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="os_name" translatable="false">BestROM</string>
+    <string name="update_recovery_title">Update Recovery</string>
+    <string name="update_recovery_description">Updates Recovery on first boot subsequent to every update.</string>
+    <string name="update_recovery_setting">Update Recovery alongside the OS</string>
+    <string name="setup_services">BestROM features</string>
+</resources>
