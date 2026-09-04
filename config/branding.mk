@@ -48,3 +48,25 @@ PRODUCT_PACKAGE_OVERLAYS += \
 # required: block in packages/apps/Updater/app/Android.bp.
 PRODUCT_PACKAGES += \
     Updater
+
+# The Settings "About" version row reads org.voltage.version
+# (VoltageVersionPreference.kt:100), and the Updater reports the same property
+# as PROP_BUILD_VERSION (Constants.java:43). vendor/voltage/config/version.mk:107
+# sets it to VOLTAGEVERSION, i.e. "6.1". Redefining it here makes both report
+# the BestROM version: gen_build_prop.py:550 and sysprop.mk:199 both state that
+# for duplicate properties the last definition wins, and this file is inherited
+# after vendor/voltage.
+#
+# The rest of the ro.voltage.* set is deliberately NOT touched. It is plumbing,
+# not branding, and stripping it breaks real functionality:
+#   ro.voltage.device                       - the Updater substitutes this for
+#                                             {device} in the OTA feed URL
+#                                             (Utils.java:145,154,160)
+#   ro.voltage.platform_release_or_codename - backuptool.sh:51 and
+#                                             backuptool_ab.sh:59 grep it to
+#                                             guard addon.d restore over an OTA
+#   ro.voltage.build.status                 - read by Settings
+#                                             VoltageMaintainerPreference and
+#                                             HomepageToastManager
+PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
+    org.voltage.version=$(BESTROM_DISPLAY_VERSION)

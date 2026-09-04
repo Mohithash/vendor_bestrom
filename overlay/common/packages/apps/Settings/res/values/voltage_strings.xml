@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: BestROM
+     SPDX-License-Identifier: Apache-2.0
+
+     Settings > About phone. The row's label comes from R.string.voltage_version
+     (VoltageVersionPreference.kt:47) and its value from the org.voltage.version
+     property, which vendor/bestrom/config/branding.mk redefines to the BestROM
+     version. Overriding both keeps the row internally consistent.
+-->
+<resources>
+    <string name="voltage_version">BestROM version</string>
+</resources>
