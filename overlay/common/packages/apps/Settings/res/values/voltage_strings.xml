@@ -4,10 +4,14 @@
      SPDX-License-Identifier: Apache-2.0
 
      Settings > About phone. The row's label comes from R.string.voltage_version
-     (VoltageVersionPreference.kt:47) and its value from the org.voltage.version
-     property, which vendor/bestrom/config/branding.mk redefines to the BestROM
-     version. Overriding both keeps the row internally consistent.
+     (VoltageVersionPreference.kt:47); its value is the org.voltage.version
+     property, which is the VoltageOS platform version (6.1) and cannot be
+     redefined from a product layer - see the note in config/branding.mk.
+
+     So the label says what the value IS. Calling it "BestROM version" would
+     display 6.1 as BestROM's version, which it is not: BestROM's own version
+     is in ro.bestrom.version and ro.modversion.
 -->
 <resources>
-    <string name="voltage_version">BestROM version</string>
+    <string name="voltage_version">Platform base version</string>
 </resources>

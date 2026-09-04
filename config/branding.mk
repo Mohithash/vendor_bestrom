@@ -49,13 +49,22 @@ PRODUCT_PACKAGE_OVERLAYS += \
 PRODUCT_PACKAGES += \
     Updater
 
-# The Settings "About" version row reads org.voltage.version
-# (VoltageVersionPreference.kt:100), and the Updater reports the same property
-# as PROP_BUILD_VERSION (Constants.java:43). vendor/voltage/config/version.mk:107
-# sets it to VOLTAGEVERSION, i.e. "6.1". Redefining it here makes both report
-# the BestROM version: gen_build_prop.py:550 and sysprop.mk:199 both state that
-# for duplicate properties the last definition wins, and this file is inherited
-# after vendor/voltage.
+# NOTE: org.voltage.version cannot be redefined here. It is what the Settings
+# "About" version row displays (VoltageVersionPreference.kt:100) and what the
+# Updater reports as PROP_BUILD_VERSION (Constants.java:43), and it would be
+# natural to want it to carry the BestROM version. Two things prevent it:
+#
+#   1. build/soong/scripts/gen_build_prop.py rejects duplicate assignments
+#      outright - "error: found duplicate sysprop assignments". The first-wins
+#      behaviour in that file is the legacy path, gated behind
+#      BUILD_BROKEN_DUP_SYSPROP, and is not active.
+#   2. Overriding the VOLTAGEVERSION make variable instead does not work
+#      either: vendor/voltage/config/version.mk:16 assigns it with := and is
+#      inherited before this file.
+#
+# So the About row shows the VoltageOS platform version, 6.1. The BestROM
+# version is carried by ro.bestrom.version and ro.modversion above. Changing
+# the row's value would mean forking vendor/voltage.
 #
 # The rest of the ro.voltage.* set is deliberately NOT touched. It is plumbing,
 # not branding, and stripping it breaks real functionality:
@@ -68,5 +77,3 @@ PRODUCT_PACKAGES += \
 #   ro.voltage.build.status                 - read by Settings
 #                                             VoltageMaintainerPreference and
 #                                             HomepageToastManager
-PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
-    org.voltage.version=$(BESTROM_DISPLAY_VERSION)
