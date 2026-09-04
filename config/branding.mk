@@ -55,6 +55,23 @@ PRODUCT_PACKAGE_OVERLAYS += \
 PRODUCT_PACKAGES += \
     Updater
 
+# Freezer - BestROM's native app freezer (packages/apps/Freezer, from
+# bestrom-peridot-source@packages-apps-freezer). A platform-signed privileged
+# system_ext app; its power comes from the platform signature plus the privapp
+# allowlist, with no Shizuku or root path.
+#
+# Its own rom/README.md says to add this by patching vendor/voltage/config/packages.mk.
+# We do it here instead: BestROM does not fork vendor/voltage, and that patch's
+# context does not match this tree anyway (it anchors on an OpenCamera block that
+# this packages.mk does not have).
+#
+# The privapp allowlist module comes along automatically via the required: clause
+# in packages/apps/Freezer/Android.bp - it must not be listed separately. All four
+# signature|privileged permissions it requests are allowlisted; a mismatch aborts
+# the boot on a build with ro.control_privapp_permissions=enforce.
+PRODUCT_PACKAGES += \
+    Freezer
+
 # NOTE: org.voltage.version cannot be redefined here. It is what the Settings
 # "About" version row displays (VoltageVersionPreference.kt:100) and what the
 # Updater reports as PROP_BUILD_VERSION (Constants.java:43), and it would be
