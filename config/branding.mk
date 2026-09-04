@@ -8,7 +8,13 @@
 # here: two PRODUCT_COPY_FILES writing the same install/bin/backuptool.sh is a
 # hard build error, and a second ".PHONY: bacon" recipe wins nondeterministically.
 
-BESTROM_VERSION_MAJOR := 1
+# 3.0, not 1.0. The last shipped release was BestROM-2.0-peridot-20260827.zip
+# (see bestrom_a17_backup/RESTORE.md), built on a LineageOS base. The stale
+# ro.bestrom.version=1.0-a17 that used to sit in the device tree was NOT the
+# release version - the real one lived in the old vendor_bestrom/config/version.mk,
+# which is unusable on this base. The major bump marks the LineageOS -> VoltageOS
+# migration, which is a larger discontinuity than 1.0 -> 2.0 was.
+BESTROM_VERSION_MAJOR := 3
 BESTROM_VERSION_MINOR := 0
 BESTROM_VERSION := $(BESTROM_VERSION_MAJOR).$(BESTROM_VERSION_MINOR)
 
