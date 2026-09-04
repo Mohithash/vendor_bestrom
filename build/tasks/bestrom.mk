@@ -16,7 +16,10 @@ BESTROM_SHA256 := prebuilts/build-tools/path/$(HOST_PREBUILT_TAG)/sha256sum
 
 .PHONY: bestrom
 bestrom: $(DEFAULT_GOAL) $(INTERNAL_OTA_PACKAGE_TARGET)
-	$(hide) ln -f $(INTERNAL_OTA_PACKAGE_TARGET) $(BESTROM_TARGET_PACKAGE)
+	@# Copy, do not hardlink: the OTA package is rewritten in place each build,
+	@# so a hardlinked versioned name silently turns into the NEWEST build.
+	@# On 2026-09-04 twelve differently-named zips shared one inode.
+	$(hide) cp -f $(INTERNAL_OTA_PACKAGE_TARGET) $(BESTROM_TARGET_PACKAGE)
 	$(hide) $(BESTROM_SHA256) $(BESTROM_TARGET_PACKAGE) | sed "s|$(PRODUCT_OUT)/||" > $(BESTROM_TARGET_PACKAGE).sha256sum
 	$(hide) { \
 		echo ""; \
