@@ -1,6 +1,99 @@
 BestROM 3.0 for POCO F6 (peridot)
 =================================
 
+Release:   3.0-peridot-20260905-2006-UNOFFICIAL
+Package:   BestROM-3.0-peridot-20260905-2007-UNOFFICIAL.zip (2763847713 bytes)
+sha256:    b3723cf050953461c2f083d8024b58808901280d3a300e395cdf7276924d836f
+Android:   17 (SDK 37), AOSP android-17.0.0_r1, VoltageOS 6.1 base
+Kernel:    6.1.176 GKI (android14-6.1), Theettam 2.7 lts176 (unchanged)
+Patch:     platform 2026-08-01, vendor 2026-06-01 (OS3.0.302.0.WNPMIXM blobs)
+Previous:  2026-09-05-1622
+
+Flashing
+--------
+Boot to recovery, then:
+
+    adb sideload BestROM-3.0-peridot-20260905-2007-UNOFFICIAL.zip
+
+Dirty flash over 1622 or 2026-08-27 is supported. No wipe required. The
+kernel and modules are the same as 1622.
+
+
+Changes since 2026-09-05-1622
+-----------------------------
+Framework and system code only; device tree, kernel and blobs unchanged.
+All nine framework changes are cherry-picks from Project-PenguinOS
+(celerity, Android 17 on the same Qualcomm 26Q2 base); original authors
+are kept in the commit history.
+
+Play Integrity / root hiding
+  * Property spoofing now applies at the SystemProperties layer.
+    SystemProperties.get/getInt/getLong/getBoolean and the Handle fast
+    path consult the PIF spoof service per process, so a caller reading
+    ro.build.fingerprint (or any spoofed key) directly no longer bypasses
+    the Build.* field spoof. Build fields are written through JNI
+    (SetStatic*Field) instead of reflection.
+  * SDK_INT spoof reads its target from the PIF config (fallback 32) and
+    is applied only to the DroidGuard process; SECURITY_PATCH is synced
+    to the raw properties.
+  * TrickyStore: keybox XML is validated structurally before parsing
+    (must carry an ECDSA/RSA key block and a serial/DeviceID), and on a
+    24 h cooldown a background thread checks the keybox cert serials
+    against android.googleapis.com/attestation/status. Warn-only,
+    fail-open: a revoked or suspended keybox is now logged instead of
+    failing attestation silently.
+
+Media
+  * codec2: the C2IgbaBuffer sync-fence wait was hard-coded to 1/60 s;
+    24/30 fps content could time out ("Waiting a sync fence failed 110")
+    and drop frames. Timeout now scales for low frame rates. (QTI)
+  * audioflinger: DuplicatingThread buffering deepened (overflow buffers
+    10 -> 16, output-track buffer 3x -> 6x); fixes glitches when playing
+    to two outputs at once (speaker + Bluetooth / wired).
+
+Graphics and input
+  * SurfaceFlinger keeps the expensive-rendering hint asserted across
+    client-composition cache hits during blur instead of dropping the
+    GPU boost on every reused frame.
+  * InputDispatcher: an inconsistent hover-event stream from a synthesized
+    or injected event was a LOG(FATAL) that aborted system_server (device
+    reboot). Downgraded to a warning.
+  * Binder: BINDER_VM_SIZE raised from 1 MB to 4 MB (fewer FAILED BINDER
+    TRANSACTION on large parcels; virtual reservation only).
+
+SystemUI
+  * KeyguardStateController: showing/secure flags made volatile. Secure
+    Quick Settings tiles read them off the main thread and a stale value
+    could skip the unlock prompt.
+
+Build system
+  * The build/make fork pin in the manifest now carries the VoltageOS
+    copyfile/linkfile children (Makefile, build/envsetup.sh, build/core,
+    build/target, build/tools, CleanSpec.mk, buildspec.mk.default). The
+    earlier pin dropped them, so a repo sync removed the links and the
+    build could not source envsetup.
+  * frameworks/av now lives on its own fork (Mohithash/frameworks_av,
+    bestrom-a17) and is pinned in the manifest.
+
+Not changed in this build
+  * Device tree, kernel, vendor blobs, sepolicy and overlays are identical
+    to 1622 (device tree b0f259e, the Redmi overlay package-name fix,
+    only affects Redmi Turbo 3 units).
+
+Known issues
+  * The SystemProperties-layer spoof is the change to verify: check Play
+    Integrity (device + basic) after flashing. Untested on device as of
+    this build.
+  * Earlier-boot crash history (vendor.dolby.media.c2 early-boot SIGSEGV,
+    mediacodeclist_generator abort) is unchanged; not reproduced on 1622.
+
+
+Previous release
+================
+
+BestROM 3.0 for POCO F6 (peridot)
+=================================
+
 Release:   3.0-peridot-20260905-1620-UNOFFICIAL
 Package:   BestROM-3.0-peridot-20260905-1622-UNOFFICIAL.zip (2763831276 bytes)
 sha256:    91e958a747888ce15e8909503e4f01decef81f616ac569b6465823d8053a90c2
