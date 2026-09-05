@@ -112,8 +112,10 @@ Known issues
 ------------
   Bootloader is unlocked and AVB is disabled; hardware attestation
       reports it. Play Integrity DEVICE and STRONG fail. Unchanged.
-  Dolby codec2 blob (from pdx245): E-AC3 / AC-4 playback not verified;
-      a mediacodeclist_generator tombstone at boot has been observed.
+  Dolby codec2 blob (from pdx245): E-AC3 verified on this build
+      (c2.dolby.eac3.decoder decodes, no crash, service stable); AC-4 not
+      tested for lack of a sample. The early-boot SIGSEGV seen on the
+      2026-08 build did not reproduce.
   init.qti.media.rc, xiaomi_modem_sh, xiaomi_modem_cust_sh reference
       scripts that are not in the image. No effect observed.
   LineageOS SDK namespace (org.lineageos.platform, lineage* binder
