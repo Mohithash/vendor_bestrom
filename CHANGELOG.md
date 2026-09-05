@@ -1,6 +1,75 @@
 BestROM 3.0 for POCO F6 (peridot)
 =================================
 
+Release:   3.0-peridot-20260905-2046-UNOFFICIAL
+Package:   BestROM-3.0-peridot-20260905-2047-UNOFFICIAL.zip (2763843476 bytes)
+sha256:    5b669151b6476dbcbe279b8a8102ed81441a4a779eccdc98876f81254fe21e41
+Android:   17 (SDK 37), AOSP android-17.0.0_r1, VoltageOS 6.1 base
+Kernel:    6.1.176 GKI (android14-6.1), Theettam 2.7 lts176 (unchanged)
+Patch:     platform 2026-08-01, vendor 2026-06-01 (OS3.0.302.0.WNPMIXM blobs)
+Previous:  2026-09-05-2007
+
+Flashing
+--------
+Boot to recovery, then:
+
+    adb sideload BestROM-3.0-peridot-20260905-2047-UNOFFICIAL.zip
+
+Dirty flash over 2007, 1622 or 2026-08-27 is supported. No wipe required.
+Kernel and modules are unchanged since 1622.
+
+
+Changes since 2026-09-05-2007
+-----------------------------
+UI only. Kernel, blobs, HALs and the framework changes from 2007 are
+carried unchanged.
+
+Theme
+  * True-black dark surfaces. When Material You generates the dynamic
+    colour overlay, the dark variants of the surface roles are forced to
+    black / near-black (background, surface and surface_container to
+    #000000; container_lowest #080808, dim #0C0C0C, container_low
+    #0F0F0F, container_high #171717, container_highest #1B1B1B, bright
+    #212121). Light mode is untouched. Secure setting system_black_theme
+    (default 1) turns it off; a change applies at the next overlay
+    regeneration (wallpaper or dark-mode change, or reboot).
+  * Monochrome accents by default. The Material You style defaults to
+    MONOCHROMATIC instead of TONAL_SPOT, and the unknown-style and
+    unparsable-setting fallbacks follow it, so a colourful wallpaper no
+    longer seeds colour system-wide. The style picker in Wallpaper &
+    style still overrides it per user.
+  * Themed (monochrome) launcher icons are on by default.
+  * Default wallpaper re-exported as pure #000000 at the panel's native
+    1220x2712 (was 1080x2400).
+
+Flat UI
+  * No window or shade blur: TARGET_ENABLE_BLUR is off for peridot, which
+    selects ro.custom.blur.enable=false, persist.sysui.disableBlur=true
+    and ro.surface_flinger.supports_background_blur=0; app-launch blur
+    and shade-expansion blur are off in the framework overlay.
+
+SystemUI defaults
+  * Quick Settings default set trimmed to internet, bt, flashlight, dnd,
+    rotation, battery, screenrecord, airplane. Every other tile remains
+    in the tile editor.
+  * Alarm, Bluetooth and VPN indicators are hidden from the status bar
+    by default (plus the stock rotate and headset exclusions).
+  * The status-bar icon animation no longer vibrates.
+
+Known issues
+  * Not yet verified on device. Things to look at after flashing: dark
+    surfaces are black (shade, Settings, launcher drawer), accents are
+    grey, and the shade has no blur. If Play Integrity was passing on
+    2007 it is unaffected; this build touches no properties that
+    attestation reads.
+
+
+Previous release
+================
+
+BestROM 3.0 for POCO F6 (peridot)
+=================================
+
 Release:   3.0-peridot-20260905-2006-UNOFFICIAL
 Package:   BestROM-3.0-peridot-20260905-2007-UNOFFICIAL.zip (2763847713 bytes)
 sha256:    b3723cf050953461c2f083d8024b58808901280d3a300e395cdf7276924d836f
