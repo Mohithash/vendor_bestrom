@@ -39,8 +39,7 @@ PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
     ro.bestrom.releasetype=$(BESTROM_BUILD_TYPE) \
     ro.bestrom.build.date=$(BESTROM_BUILD_DATE) \
     ro.bestrom.device=$(BESTROM_DEVICE) \
-    ro.bestrom.fingerprint=$(BESTROM_FINGERPRINT) \
-    ro.modversion=BestROM-$(BESTROM_DISPLAY_VERSION)
+    ro.bestrom.fingerprint=$(BESTROM_FINGERPRINT)
 
 # Build-time resource overlays. Rebrands the setup wizard and repoints the
 # updater at BestROM's OTA feed. vendor/voltage/overlay/common touches neither,
@@ -86,7 +85,7 @@ PRODUCT_PACKAGES += \
 #      inherited before this file.
 #
 # So the About row shows the VoltageOS platform version, 6.1. The BestROM
-# version is carried by ro.bestrom.version and ro.modversion above. Changing
+# version is carried by ro.bestrom.version above. Changing
 # the row's value would mean forking vendor/voltage.
 #
 # The rest of the ro.voltage.* set is deliberately NOT touched. It is plumbing,

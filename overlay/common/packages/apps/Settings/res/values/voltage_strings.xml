@@ -10,7 +10,7 @@
 
      So the label says what the value IS. Calling it "BestROM version" would
      display 6.1 as BestROM's version, which it is not: BestROM's own version
-     is in ro.bestrom.version and ro.modversion.
+     is in ro.bestrom.version.
 -->
 <resources>
     <string name="voltage_version">Platform base version</string>
