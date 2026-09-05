@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- BestROM A17 - POCO F6 (peridot) - on top of VoltageOS 17 (AOSP android-17.0.0_r1).
+     Only what VoltageOS/manifest@17 does NOT already provide. Do not add
+     hardware/qcom-caf/*, vendor/qcom/opensource/*, device/qcom/sepolicy_vndr/sm8650,
+     hardware/xiaomi, hardware/google/pixel or hardware/nxp/* here - the upstream
+     manifest has them and repo will reject duplicate paths. -->
+<manifest>
+  <remote name="gh" fetch="https://github.com/" />
+  <remote name="gl" fetch="https://gitlab.com/" />
+
+  <!-- Device tree: carries the theettam-a17 work (private repo; uses the token
+       in ~/.gitconfig http.extraheader). -->
+  <project name="Mohithash/android_device_xiaomi_peridot"
+           path="device/xiaomi/peridot"
+           remote="gh" revision="theettam-a17" />
+
+  <!-- BestROM product layer. Extends vendor/voltage; see that repo's README for
+       why the older branches (16/16.2/17/bestrom-a17/main) cannot be used here. -->
+  <project name="Mohithash/android_vendor_bestrom"
+           path="vendor/bestrom"
+           remote="gh" revision="voltage-17" />
+
+  <!-- PrivacyKit-Native. Three VoltageOS repos are replaced by BestROM forks
+       carrying the PrivacyKit patches, rebased from the A16 patch set. Each
+       needs its upstream removed first or repo rejects the duplicate path.
+       remove-project matches on the project NAME, and our forks are namespaced
+       "Mohithash/...", so the names do not collide even where the basename is
+       the same.
+
+       These forks carry full upstream history on purpose, so they can be
+       rebased when VoltageOS moves. That is the maintenance cost of pinning
+       rather than re-applying patches. -->
+  <remove-project name="frameworks_base_new" />
+  <project name="Mohithash/android_frameworks_base"
+           path="frameworks/base"
+           remote="gh" revision="voltage-17" />
+
+  <remove-project name="packages_apps_Settings" />
+  <project name="Mohithash/packages_apps_Settings"
+           path="packages/apps/Settings"
+           remote="gh" revision="voltage-17" />
+
+  <remove-project name="frameworks_opt_telephony" />
+  <project name="Mohithash/frameworks_opt_telephony"
+           path="frameworks/opt/telephony"
+           remote="gh" revision="voltage-17" />
+
+  <!-- BestROM branding. VoltageOS text is rebranded in string VALUES across every
+       locale (765 strings / 117 files), which cannot be done with an overlay alone
+       because an overlay would have to mirror ~120 locale directories. Resource
+       names, package names, properties and URLs are deliberately untouched - see
+       rebrand-strings.py for why each is excluded. -->
+  <remove-project name="packages_apps_SetupWizard" />
+  <project name="Mohithash/packages_apps_SetupWizard"
+           path="packages/apps/SetupWizard"
+           remote="gh" revision="voltage-17" />
+
+  <remove-project name="packages_apps_Updater" />
+  <project name="Mohithash/packages_apps_Updater"
+           path="packages/apps/Updater"
+           remote="gh" revision="voltage-17" />
+
+  <remove-project name="packages_apps_Launcher3" />
+  <project name="Mohithash/packages_apps_Launcher3"
+           path="packages/apps/Launcher3"
+           remote="gh" revision="voltage-17" />
+
+  <!-- SELinux policy: VoltageOS's copy of the Lineage SDK policy, forked so the type
+       identifiers can be renamed lineage -> bestrom (integrity scanners read the compiled
+       .cil / *_contexts and flag "hal_lineage_*" as a LineageOS signature). Service names,
+       binary paths and package names are untouched - they must match the real HALs. -->
+  <remove-project name="device_voltage_sepolicy" />
+  <project name="Mohithash/device_voltage_sepolicy"
+           path="device/voltage/sepolicy"
+           remote="gh" revision="voltage-17" />
+
+  <!-- Proprietary blobs. CP2A is the only branch that covers all 2467 entries in
+       device/xiaomi/peridot/proprietary-files.txt; the GuidixX/Mohithash forks are
+       missing 272 (ODM GNSS HAL + the misound/mis_head audio-effects set). -->
+  <project name="Mohithash/proprietary_vendor_xiaomi_peridot"
+           path="vendor/xiaomi/peridot"
+           remote="gh" revision="CP2A-bestrom" />
+
+  <!-- Kernel: Theettam lts176 - the SAME TREE AND SAME SUBLEVEL as the Image that
+       gets flashed over this ROM. Measured progression of the per-module import test
+       (how many of 465 .ko would fail to load under the device's lts176 Image):
+         khargosxh18@16          wrong tree entirely
+         GuidixX@16.2            373 unloadable, 619 CRC mismatches
+         bestrom-a17-theettam    65 unloadable, 9 CRC mismatches   (175, one LTS behind)
+         theettam-2.7-lts176     <- this, exact sublevel match
+       lts176 also KEEPS soong_namespace in its Android.bp, so unlike
+       bestrom-a17-theettam it needs no local patch to build against a modules repo.
+
+       Modules and devicetrees move to GuidixX 16.2 because that is what Theettam
+       forks from (theettam-2.7 merge-base 48d7bba4750a, 0 behind), making this a
+       self-consistent lineage. lts176 does NOT carry wl2866d, mi_fp or xlogchar
+       in-kernel - bestrom-a17-theettam added those - so they come from the GuidixX
+       modules tree instead, which is why BoardConfig.mk lists the xiaomi/drivers/*
+       entries alongside this pin. The two must change together. -->
+  <project name="Mohithash/kernel_xiaomi_sm8635"
+           path="kernel/xiaomi/sm8635"
+           remote="gh" revision="theettam-2.7-lts176" />
+  <project name="GuidixX/kernel_xiaomi_sm8635-modules"
+           path="kernel/xiaomi/sm8635-modules"
+           remote="gh" revision="16.2" />
+  <project name="GuidixX/kernel_xiaomi_sm8635-devicetrees"
+           path="kernel/xiaomi/sm8635-devicetrees"
+           remote="gh" revision="16.2" />
+
+  <!-- Freezer - BestROM's native app freezer. bestrom-peridot-source is a monorepo
+       with one branch per package; the repo root IS the soong module root, so the
+       branch checks out directly as packages/apps/Freezer. -->
+  <project name="Mohithash/bestrom-peridot-source"
+           path="packages/apps/Freezer"
+           remote="gh" revision="packages-apps-freezer" />
+
+  <!-- MiuiCamera. Optional by design (BoardConfig.mk:307 -include,
+       device.mk:552 inherit-product-if-exists) - drop both if they break. -->
+  <project name="peridot-dev/android_device_xiaomi_peridot-miuicamera"
+           path="device/xiaomi/peridot-miuicamera"
+           remote="gh" revision="lineage-23.2" />
+  <project name="NoPrincessHere/proprietary_vendor_xiaomi_peridot-miuicamera"
+           path="vendor/xiaomi/peridot-miuicamera"
+           remote="gl" revision="sixteen-qpr2" />
+
+  <!-- Deliberately NOT included: packages/apps/GameBar, vendor/bcr,
+       packages/apps/ViPER4AndroidFX. vendorsetup.sh clones them, but nothing in
+       this device tree references any of the three (device.mk:554 records the
+       GameBar removal), so they would only cost disk.
+       Also NOT included: vendor/lineage-priv - khargosxh18/vendor_lineage-priv
+       no longer exists, so the build signs with test-keys. -->
+
+  <!-- BestROM de-branding / recovery / audit forks (2026-09-05). Each carries the
+       full VoltageOS 17 history plus the BestROM commits on branch bestrom-a17. -->
+  <remove-project name="bootable_recovery" />
+  <project name="Mohithash/bootable_recovery"
+           path="bootable/recovery"
+           remote="gh" revision="bestrom-a17" />
+  <remove-project name="build_soong" />
+  <project name="Mohithash/build_soong"
+           path="build/soong"
+           remote="gh" revision="bestrom-a17" />
+  <remove-project name="build" />
+  <project name="Mohithash/build"
+           path="build/make"
+           remote="gh" revision="bestrom-a17" />
+  <remove-project name="frameworks_native" />
+  <project name="Mohithash/frameworks_native"
+           path="frameworks/native"
+           remote="gh" revision="bestrom-a17" />
+  <remove-project name="vendor_voltage" />
+  <project name="Mohithash/vendor_voltage"
+           path="vendor/voltage"
+           remote="gh" revision="bestrom-a17" />
+  <remove-project name="hardware_voltage_interfaces" />
+  <project name="Mohithash/hardware_voltage_interfaces"
+           path="hardware/voltage/interfaces"
+           remote="gh" revision="bestrom-a17" />
+  <remove-project name="hardware_xiaomi" />
+  <project name="Mohithash/hardware_xiaomi"
+           path="hardware/xiaomi"
+           remote="gh" revision="bestrom-a17" />
+  <remove-project name="hardware_google_pixel" />
+  <project name="Mohithash/hardware_google_pixel"
+           path="hardware/google/pixel"
+           remote="gh" revision="bestrom-a17" />
+  <remove-project name="packages_apps_ParanoidSense" />
+  <project name="Mohithash/packages_apps_ParanoidSense"
+           path="packages/apps/ParanoidSense"
+           remote="gh" revision="bestrom-a17" />
+</manifest>
