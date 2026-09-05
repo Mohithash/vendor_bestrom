@@ -144,7 +144,15 @@
   <remove-project name="build" />
   <project name="Mohithash/build"
            path="build/make"
-           remote="gh" revision="bestrom-a17" />
+           remote="gh" revision="bestrom-a17" >
+    <copyfile src="core/root.mk" dest="Makefile" />
+    <linkfile src="CleanSpec.mk" dest="build/CleanSpec.mk" />
+    <linkfile src="buildspec.mk.default" dest="build/buildspec.mk.default" />
+    <linkfile src="core" dest="build/core" />
+    <linkfile src="envsetup.sh" dest="build/envsetup.sh" />
+    <linkfile src="target" dest="build/target" />
+    <linkfile src="tools" dest="build/tools" />
+  </project>
   <remove-project name="frameworks_native" />
   <remove-project name="frameworks_av" />
   <project name="Mohithash/frameworks_native"
