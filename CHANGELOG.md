@@ -1,9 +1,9 @@
 BestROM 3.0 for POCO F6 (peridot)
 =================================
 
-Release:   3.0-peridot-20260905-1529-UNOFFICIAL
-Package:   BestROM-3.0-peridot-20260905-1530-UNOFFICIAL.zip (2763830995 bytes)
-sha256:    37e5b7b3e6c2144ec3ff443b8a8d6289d6ec31888e1a73d9ed934ea88dae9e59
+Release:   3.0-peridot-20260905-1620-UNOFFICIAL
+Package:   BestROM-3.0-peridot-20260905-1622-UNOFFICIAL.zip (2763831276 bytes)
+sha256:    91e958a747888ce15e8909503e4f01decef81f616ac569b6465823d8053a90c2
 Android:   17 (SDK 37), AOSP android-17.0.0_r1, VoltageOS 6.1 base
 Kernel:    6.1.176 GKI (android14-6.1), Theettam 2.7 lts176
 Patch:     platform 2026-08-01, vendor 2026-06-01 (OS3.0.302.0.WNPMIXM blobs)
@@ -13,7 +13,7 @@ Flashing
 --------
 Boot to recovery, then:
 
-    adb sideload BestROM-3.0-peridot-20260905-1530-UNOFFICIAL.zip
+    adb sideload BestROM-3.0-peridot-20260905-1622-UNOFFICIAL.zip
 
 The package flashes boot and vendor_boot together; do not mix the kernel
 from one build with the modules of another (vermagic must match). Dirty
