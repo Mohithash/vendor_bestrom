@@ -99,3 +99,7 @@ PRODUCT_PACKAGES += \
 #   ro.voltage.build.status                 - read by Settings
 #                                             VoltageMaintainerPreference and
 #                                             HomepageToastManager
+
+# Keyboard is on the hot path of every text field; compile it speed like the launcher/SystemUI.
+PRODUCT_DEXPREOPT_SPEED_APPS += \
+    LatinIME
