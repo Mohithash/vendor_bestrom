@@ -1,6 +1,54 @@
 BestROM 3.0 for POCO F6 (peridot)
 =================================
 
+Release:   3.0-peridot-20260905-2109-UNOFFICIAL
+Package:   BestROM-3.0-peridot-20260905-2110-UNOFFICIAL.zip (2763843700 bytes)
+sha256:    e521186945268495db2239ba5371d1b2bb67b72c51957927aedb043b27060430
+Android:   17 (SDK 37), AOSP android-17.0.0_r1, VoltageOS 6.1 base
+Kernel:    6.1.176 GKI (android14-6.1), Theettam 2.7 lts176 (unchanged)
+Patch:     platform 2026-08-01, vendor 2026-06-01 (OS3.0.302.0.WNPMIXM blobs)
+Previous:  2026-09-05-2047
+
+Flashing
+--------
+Boot to recovery, then:
+
+    adb sideload BestROM-3.0-peridot-20260905-2110-UNOFFICIAL.zip
+
+Dirty flash over 2047, 2007, 1622 or 2026-08-27 is supported. No wipe
+required. Kernel and modules are unchanged since 1622.
+
+
+Changes since 2026-09-05-2047
+-----------------------------
+Defaults only; everything from 2047 is carried unchanged.
+
+Status bar
+  * Battery percentage is shown by default
+    (config_defaultBatteryPercentageSetting). A user who has turned it
+    off keeps that choice.
+
+Animation
+  * Window, transition and animator duration scales default to 0.75x.
+    These are first-boot seeds: a fresh install gets them, an existing
+    install keeps its current values. Set them in Developer options or
+    with settings put global {window_animation,transition_animation,
+    animator_duration}_scale 0.75.
+  * SettingsProvider now seeds ANIMATOR_DURATION_SCALE
+    (def_animator_duration_scale) alongside the window and transition
+    scales; AOSP never seeded it, so a device could not ship a default.
+
+Known issues
+  * Not yet verified on device. Play Integrity is unaffected (no
+    properties touched).
+
+
+Previous release
+================
+
+BestROM 3.0 for POCO F6 (peridot)
+=================================
+
 Release:   3.0-peridot-20260905-2046-UNOFFICIAL
 Package:   BestROM-3.0-peridot-20260905-2047-UNOFFICIAL.zip (2763843476 bytes)
 sha256:    5b669151b6476dbcbe279b8a8102ed81441a4a779eccdc98876f81254fe21e41
