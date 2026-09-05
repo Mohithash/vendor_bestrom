@@ -116,8 +116,12 @@ Known issues
       (c2.dolby.eac3.decoder decodes, no crash, service stable); AC-4 not
       tested for lack of a sample. The early-boot SIGSEGV seen on the
       2026-08 build did not reproduce.
-  init.qti.media.rc, xiaomi_modem_sh, xiaomi_modem_cust_sh reference
-      scripts that are not in the image. No effect observed.
+  init.qti.media.rc, xiaomi_modem_sh, xiaomi_modem_cust_sh referenced
+      scripts that are not in the image (MIUI-only helpers; upstream dropped
+      them). Verified harmless: the media variant is static and the RIL/IMS
+      stack runs without them. The dead service stanzas are removed in the
+      source tree (device tree 6c33596, blobs CP2A-bestrom) and land in the
+      next build; on this build they only log a failed start at boot.
   LineageOS SDK namespace (org.lineageos.platform, lineage* binder
       service names) is unchanged.
   Glimpse, QtiTelephonyCompat, GmsCompat, CalyxOS and ProtonAOSP
