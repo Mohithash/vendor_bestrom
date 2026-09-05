@@ -81,25 +81,26 @@
            path="vendor/xiaomi/peridot"
            remote="gh" revision="CP2A-bestrom" />
 
-  <!-- Kernel: Theettam lts176 - the SAME TREE AND SAME SUBLEVEL as the Image that
+  <!-- Kernel: Theettam 2.8 (theettam-2.8, GKI 6.1.176) - the SAME TREE AND SAME SUBLEVEL as the Image that
        gets flashed over this ROM. Measured progression of the per-module import test
        (how many of 465 .ko would fail to load under the device's lts176 Image):
          khargosxh18@16          wrong tree entirely
          GuidixX@16.2            373 unloadable, 619 CRC mismatches
          bestrom-a17-theettam    65 unloadable, 9 CRC mismatches   (175, one LTS behind)
-         theettam-2.7-lts176     <- this, exact sublevel match
-       lts176 also KEEPS soong_namespace in its Android.bp, so unlike
+         theettam-2.7-lts176     exact sublevel match (merged into theettam-2.8)
+         theettam-2.8            <- this: lts176 plus the 2.8 work and the QRTR caps
+       theettam-2.8 also KEEPS soong_namespace in its Android.bp, so unlike
        bestrom-a17-theettam it needs no local patch to build against a modules repo.
 
        Modules and devicetrees move to GuidixX 16.2 because that is what Theettam
        forks from (theettam-2.7 merge-base 48d7bba4750a, 0 behind), making this a
-       self-consistent lineage. lts176 does NOT carry wl2866d, mi_fp or xlogchar
+       self-consistent lineage. theettam-2.8 does NOT carry wl2866d, mi_fp or xlogchar
        in-kernel - bestrom-a17-theettam added those - so they come from the GuidixX
        modules tree instead, which is why BoardConfig.mk lists the xiaomi/drivers/*
        entries alongside this pin. The two must change together. -->
   <project name="Mohithash/kernel_xiaomi_sm8635"
            path="kernel/xiaomi/sm8635"
-           remote="gh" revision="theettam-2.7-lts176" />
+           remote="gh" revision="theettam-2.8" />
   <project name="GuidixX/kernel_xiaomi_sm8635-modules"
            path="kernel/xiaomi/sm8635-modules"
            remote="gh" revision="16.2" />
@@ -145,8 +146,12 @@
            path="build/make"
            remote="gh" revision="bestrom-a17" />
   <remove-project name="frameworks_native" />
+  <remove-project name="frameworks_av" />
   <project name="Mohithash/frameworks_native"
            path="frameworks/native"
+           remote="gh" revision="bestrom-a17" />
+  <project name="Mohithash/frameworks_av"
+           path="frameworks/av"
            remote="gh" revision="bestrom-a17" />
   <remove-project name="vendor_voltage" />
   <project name="Mohithash/vendor_voltage"
