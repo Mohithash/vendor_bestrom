@@ -181,7 +181,4 @@
   <project name="Mohithash/packages_apps_ParanoidSense"
            path="packages/apps/ParanoidSense"
            remote="gh" revision="bestrom-a17" />
-  <project name="Mohithash/android_packages_apps_Jelly"
-           path="packages/apps/Jelly"
-           remote="gh" revision="bestrom-a17" />
 </manifest>
