@@ -1,6 +1,82 @@
 BestROM 3.0 for POCO F6 (peridot)
 =================================
 
+Release:   3.0-peridot-20260906-0549-UNOFFICIAL
+Package:   BestROM-3.0-peridot-20260906-0551-UNOFFICIAL.zip (2763843342 bytes)
+sha256:    558818f72794d588d40f4fd4b6c824e21907c9d776e6c8c77159431d613caca2
+Android:   17 (SDK 37), AOSP android-17.0.0_r1, VoltageOS 6.1 base
+Kernel:    6.1.176 GKI (android14-6.1), Theettam 2.7 lts176 (unchanged)
+Patch:     platform 2026-08-01, vendor 2026-06-01 (OS3.0.302.0.WNPMIXM blobs)
+Previous:  2026-09-06-0416
+
+Flashing
+--------
+Boot to recovery, then:
+
+    adb sideload BestROM-3.0-peridot-20260906-0551-UNOFFICIAL.zip
+
+Dirty flash over 0416 or any 2026-09-05 build is supported. No wipe
+required. Kernel and modules are unchanged since 1622.
+
+
+Changes since 2026-09-06-0416
+-----------------------------
+Second search of other trees (upstream VoltageOS, GrapheneOS 17,
+Evolution-X, YAAP, other peridot device trees). Functional fixes only;
+stock UI is unchanged.
+
+Face unlock (regression fix)
+  * Face unlock could not start on any 2026-09-05 build: the app had
+    been renamed to com.bestrom.faceunlock while the framework kept
+    binding co.aospa.sense, and the app's privileged-permission
+    allowlists were still keyed on the old package. The framework,
+    SystemUI privacy exemption, the app's bind action and all three
+    allowlists now agree on com.bestrom.faceunlock. Re-enrol if face
+    unlock was set up before.
+
+Google services (sandboxed GmsCore)
+  * Google Password Manager and passkeys: GmsCore's credential provider
+    is declared with a system-only intent action that CredentialManager
+    accepts only from preinstalled providers; it is rewritten to the
+    ordinary action at package parse time. (GrapheneOS)
+  * Optional GMS packages that are genuinely installed are no longer
+    reported to GmsCore as absent; the real lookup runs first and the
+    pseudo-disabled stub is used only when the package is missing.
+    (GrapheneOS)
+
+SystemUI
+  * The under-display fingerprint overlay no longer crashes SystemUI
+    when it is hidden after the view was already detached by a finger-up,
+    bouncer or display-state race. (Evolution-X)
+  * UdfpsHelper checks the view is attached before updating its dim
+    animator instead of throwing per frame. (YAAP)
+  * GameSpace's stop-recording action now stops the active screen
+    recording. (VoltageOS upstream)
+
+Play Integrity
+  * TrickyStore refreshes its target list at most once per 5 s on the
+    attestation path instead of on every check. (Evolution-X)
+
+Device
+  * /mnt/vendor/persist/fingerprint is labelled for units with the jiiov
+    fingerprint sensor. (LineageOS)
+
+Checked and already present
+  * RescueParty disabled, UFFD garbage collector, lazy RCU boot
+    parameters, the game 60 Hz cap removal, app-zygote UID guards.
+
+Known issues
+  * Not yet verified on device: face unlock enrolment and Google
+    Password Manager as a credential provider are the two things to try.
+    Play Integrity is unaffected.
+
+
+Previous release
+================
+
+BestROM 3.0 for POCO F6 (peridot)
+=================================
+
 Release:   3.0-peridot-20260906-0530-UNOFFICIAL
 Package:   BestROM-3.0-peridot-20260906-0532-UNOFFICIAL.zip (2763838139 bytes)
 sha256:    35c4df2d3339dc225a4ab8e523816b5d50cee420e1e3ee7841d293196e197c74
