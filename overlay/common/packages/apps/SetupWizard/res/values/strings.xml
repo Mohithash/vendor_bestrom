@@ -6,7 +6,7 @@
      packages/apps/SetupWizard is the only setup wizard in the tree, so it is
      rebranded rather than debloated. Most of its user-visible strings
      interpolate os_name via xliff, so overriding that one string carries the
-     bulk of the rebrand; the four below are hardcoded and need their own.
+     bulk of the rebrand; the ones below are hardcoded and need their own.
 -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="os_name" translatable="false">BestROM</string>
@@ -14,4 +14,9 @@
     <string name="update_recovery_description">Updates Recovery on first boot subsequent to every update.</string>
     <string name="update_recovery_setting">Update Recovery alongside the OS</string>
     <string name="setup_services">BestROM features</string>
+    <!-- The stock strings link to lineageos.org/legal. Point at the project's own
+         public home instead; replace with a dedicated privacy-policy page when one
+         exists. -->
+    <string name="services_privacy_policy_uri" translatable="false">https://github.com/Mohithash/android_device_xiaomi_peridot</string>
+    <string name="services_find_privacy_policy">You can read more about BestROM and its policies on another device by visiting <xliff:g id="uri" example="https://github.com/Mohithash">%1$s</xliff:g></string>
 </resources>
