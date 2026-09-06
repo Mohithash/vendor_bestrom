@@ -1,3 +1,10 @@
+Unreleased (next build)
+=======================
+
+Camera
+  * MiuiCamera removed (187 MB); Aperture is the camera again.
+
+
 BestROM 3.0 for POCO F6 (peridot)
 =================================
 

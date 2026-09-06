@@ -115,19 +115,15 @@
            path="packages/apps/Freezer"
            remote="gh" revision="packages-apps-freezer" />
 
-  <!-- MiuiCamera. Optional by design (BoardConfig.mk:307 -include,
-       device.mk:552 inherit-product-if-exists) - drop both if they break. -->
-  <project name="peridot-dev/android_device_xiaomi_peridot-miuicamera"
-           path="device/xiaomi/peridot-miuicamera"
-           remote="gh" revision="lineage-23.2" />
-  <project name="NoPrincessHere/proprietary_vendor_xiaomi_peridot-miuicamera"
-           path="vendor/xiaomi/peridot-miuicamera"
-           remote="gl" revision="sixteen-qpr2" />
-
   <!-- Deliberately NOT included: packages/apps/GameBar, vendor/bcr,
        packages/apps/ViPER4AndroidFX. vendorsetup.sh clones them, but nothing in
        this device tree references any of the three (device.mk:554 records the
        GameBar removal), so they would only cost disk.
+       Also NOT included: device/xiaomi/peridot-miuicamera and
+       vendor/xiaomi/peridot-miuicamera. MiuiCamera was dropped (187 MB APK, and
+       its post-capture MIVI processing gets killed so shots stay hidden in
+       MediaStore until the next launch); Aperture is the camera again. The
+       device.mk inherit and the BoardConfig -include were removed with them.
        Also NOT included: vendor/lineage-priv - khargosxh18/vendor_lineage-priv
        no longer exists, so the build signs with test-keys. -->
 
