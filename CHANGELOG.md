@@ -1,6 +1,48 @@
 BestROM 3.0 for POCO F6 (peridot)
 =================================
 
+Release:   3.0-peridot-20260906-0530-UNOFFICIAL
+Package:   BestROM-3.0-peridot-20260906-0532-UNOFFICIAL.zip (2763838139 bytes)
+sha256:    35c4df2d3339dc225a4ab8e523816b5d50cee420e1e3ee7841d293196e197c74
+Android:   17 (SDK 37), AOSP android-17.0.0_r1, VoltageOS 6.1 base
+Kernel:    6.1.176 GKI (android14-6.1), Theettam 2.7 lts176 (unchanged)
+Patch:     platform 2026-08-01, vendor 2026-06-01 (OS3.0.302.0.WNPMIXM blobs)
+Previous:  2026-09-06-0521
+
+Flashing
+--------
+Boot to recovery, then:
+
+    adb sideload BestROM-3.0-peridot-20260906-0532-UNOFFICIAL.zip
+
+Dirty flash over 0521, 0416 or any 2026-09-05 build is supported. No wipe
+required. Kernel and modules are unchanged since 1622.
+
+
+Changes since 2026-09-06-0521
+-----------------------------
+Device tree only (stock UI).
+
+Theme
+  * values-night/colors.xml no longer forces background_device_default_dark
+    to #000000. This was the last override of the old monochrome pass;
+    0521 removed the un-qualified copies but missed the night-qualified
+    one. Stock Material You dark background applies again.
+
+Carried from 0521: Double-tap to wake toggle shown in Settings, and the
+2-acquired-buffers test (revert to 3 if the before/after measurement
+shows more dropped frames).
+
+Known issues
+  * Not yet verified on device. Play Integrity is unaffected.
+
+
+Previous release
+================
+
+BestROM 3.0 for POCO F6 (peridot)
+=================================
+
 Release:   3.0-peridot-20260906-0519-UNOFFICIAL
 Package:   BestROM-3.0-peridot-20260906-0521-UNOFFICIAL.zip (2763838151 bytes)
 sha256:    790b2c4f992377b8c4b97081c6c289000d08d6d114d45c73186157dc8cdf0825
