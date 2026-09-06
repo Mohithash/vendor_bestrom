@@ -184,4 +184,8 @@
   <project name="Mohithash/packages_apps_BestromPreinstaller"
            path="packages/apps/BestromPreinstaller"
            remote="gh" revision="bestrom-a17" />
+  <remove-project name="packages_apps_Powerhub" />
+  <project name="Mohithash/packages_apps_Powerhub"
+           path="packages/apps/Powerhub"
+           remote="gh" revision="bestrom-a17" />
 </manifest>
