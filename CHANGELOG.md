@@ -2,7 +2,12 @@ Unreleased (next build)
 =======================
 
 Camera
-  * MiuiCamera removed (187 MB); Aperture is the camera again.
+  * MiuiCamera is the camera again (com.android.camera, Xiaomi's port).
+    Aperture is dropped - bestrom_peridot.mk keeps PRODUCT_NO_CAMERA := true
+    and ApertureOverlayPeridot is not installed.
+  * Both peridot-miuicamera projects are back in the manifest: the device
+    add-on (peridot-dev, lineage-23.2) and the blobs (NoPrincessHere,
+    sixteen-qpr2), with the device.mk inherit and the BoardConfig -include.
 
 
 BestROM 3.0 for POCO F6 (peridot)
