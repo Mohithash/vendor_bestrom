@@ -1,6 +1,110 @@
 BestROM 3.0 for POCO F6 (peridot)
 =================================
 
+Release:   3.0-peridot-20260906-1028-OFFICIAL
+Package:   BestROM-3.0-peridot-20260906-1029-OFFICIAL.zip (2766631716 bytes)
+sha256:    f2ff19b86b0013ac253cdffe3c5db7f0cf8b3d82ebf91e762e5b434b0da827bc
+Android:   17 (SDK 37), AOSP android-17.0.0_r1, VoltageOS 6.1 base
+Kernel:    6.1.176 GKI (android14-6.1), Theettam 2.7 lts176 (unchanged)
+Patch:     platform 2026-08-01, vendor 2026-06-01 (OS3.0.302.0.WNPMIXM blobs)
+Previous:  2026-09-06-0921
+
+Flashing
+--------
+Boot to recovery, then:
+
+    adb sideload BestROM-3.0-peridot-20260906-1029-OFFICIAL.zip
+
+Dirty flash over 0551, 0416 or any 2026-09-05 build is supported. No
+wipe required. Kernel and modules are unchanged since 1622.
+
+
+FIRST OFFICIAL BESTROM BUILD.
+
+Changes since 2026-09-06-0921
+-----------------------------
+Official
+  * Build type OFFICIAL. BestROM official builds are the maintainer's own,
+    gated on the maintainer's build environment rather than VoltageOS's
+    device list and GPG keyring; ro.bestrom.build.status=OFFICIAL, and
+    the package name and About page say so.
+  * The Updater checks Mohithash/bestrom_ota (branch 17) for updates and
+    changelogs instead of VoltageOS's OTA repository; the blocked-update
+    help link no longer points at the LineageOS wiki.
+
+Smoothness (audited: refresh-rate policy, SurfaceFlinger/HWUI pacing,
+power hints, scheduler tunables, app launch, transition config; each
+change verified against the code that reads it and against the GuidixX,
+PixelOS and LineageOS peridot trees)
+  * The INTERACTION power hint is held for the whole gesture: every node
+    had a 120-1000 ms Duration while libperfmgr issues the hint once per
+    gesture, so frequency floors and scheduler boosts reverted 120 ms
+    into a scroll, fling or transition. Now Duration 0 like the reference
+    trees; sched_boost 2 (top-app/foreground) instead of 1; three little
+    cores kept online during interaction; the GPU floor action raises
+    the floor to 353 MHz for 150 ms instead of re-asserting the idle
+    default.
+  * WindowManager's high-performance transition hint is enabled again
+    (a device overlay had disabled it): SurfaceFlinger early wake-ups
+    and the max refresh rate for the whole app open/close and recents
+    animation.
+  * A touch holds the high refresh-rate vote for 1000 ms (was 200 ms),
+    so a tap that starts a transition does not see the panel fall back
+    mid-animation; HWUI asks for CPU headroom earlier
+    (target_cpu_time_percent 10). Both GuidixX values.
+  * Animation durations back to AOSP: a VoltageOS commit had halved
+    config_shortAnimTime/mediumAnimTime/longAnimTime and the activity
+    durations, which made dialogs, popups, fragment, rotation and IME
+    animations abrupt. Animation scales are the stock 1.0x.
+  * Dexopt: vendor/voltage no longer overrides the device's compiler
+    filters (first-boot=speed, bg-dexopt=speed-profile now apply; first
+    boot after flashing takes a few minutes longer, once).
+  Battery: the held interaction boost and the longer touch timer cost
+  some power while the screen is being touched; it is the configuration
+  the reference trees ship on this SoC.
+
+Carried from 0921 and 0911:
+Fingerprint
+  * Enrolment ring radius restored (config_udfpsEnrollProgressBar=90).
+
+About
+  * The build-status row reads 'Official by Sal'; tapping it opens
+    https://github.com/Mohithash. The 'Platform base' row is removed
+    (Build number carries the version).
+
+Biometrics: VoltageOS's implementation, BestROM's name
+  * Face unlock and fingerprint code are VoltageOS's own: our earlier
+    rename and bind fix and the two SystemUI UDFPS guards from 0551 are
+    reverted, VoltageOS's rebrand and its follow-up fixup are applied.
+    On top of that the app is renamed to com.bestrom.faceunlock in one
+    consistent step, including a jarjar rule that relocates the
+    references inside the prebuilt vendor jar, which the earlier rename
+    missed and which is why it crashed. Re-enrol face data.
+
+Settings
+  * Powerhub is now 'Custom Tweaks' with a rocket icon.
+
+Browser
+  * Via Browser 7.3.3 (mark.via.gp) is preloaded as a normal, removable
+    user app: a new BestromPreinstaller installs it once on first boot
+    from /product/etc/bestrom/preinstall, and an uninstall sticks. A
+    Jellyfish package entry that referred to nothing is dropped.
+
+Phone
+  * Up to 10000 call log entries are kept per SIM (was 500).
+
+Known issues
+  * Not yet verified on device: face-unlock enrolment (now VoltageOS's
+    implementation) and fingerprint enrolment. Play Integrity is
+    unaffected.
+
+
+Previous release
+================
+
+BestROM 3.0 for POCO F6 (peridot)
+=================================
+
 Release:   3.0-peridot-20260906-0920-UNOFFICIAL
 Package:   BestROM-3.0-peridot-20260906-0921-UNOFFICIAL.zip (2766627201 bytes)
 sha256:    2dad642a30f2358c4dee43fd49fb8b53bf0cc5ff85d7a8c5964cd48978b85ed4
