@@ -71,6 +71,27 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     Freezer
 
+# BestromPreinstaller (packages/apps/BestromPreinstaller) - installs
+# vendor-bundled third-party APKs as normal, fully removable user apps on
+# first boot, via PackageInstaller. This is what lets BestROM ship optional
+# third-party apps without them being permanent, unremovable system apps.
+#
+# NOT added to a separate vendor/bestrom/config/packages.mk: this file
+# (branding.mk) is the only vendor/bestrom/config/*.mk that
+# device/xiaomi/peridot/bestrom_peridot.mk actually inherits (see its
+# `$(call inherit-product, vendor/bestrom/config/branding.mk)` at line 40,
+# with no matching call for any packages.mk). A packages.mk would need its
+# own inherit-product line added to the device makefile to not be dead
+# weight - exactly the kind of silent no-op already documented above for the
+# old PRODUCT_PACKAGES filter-out line. Simplest correct fix is to add the
+# package here, alongside Updater and Freezer, where it is known to be
+# inherited.
+#
+# The privapp allowlist module comes along automatically via the required:
+# clause in packages/apps/BestromPreinstaller/Android.bp.
+PRODUCT_PACKAGES += \
+    BestromPreinstaller
+
 # NOTE: org.voltage.version cannot be redefined here. It is what the Settings
 # "About" version row displays (VoltageVersionPreference.kt:100) and what the
 # Updater reports as PROP_BUILD_VERSION (Constants.java:43), and it would be
@@ -103,3 +124,9 @@ PRODUCT_PACKAGES += \
 # Keyboard is on the hot path of every text field; compile it speed like the launcher/SystemUI.
 PRODUCT_DEXPREOPT_SPEED_APPS += \
     LatinIME
+
+# Removable preloads: installed once on first boot by BestromPreinstaller as
+# ordinary user apps, so users can uninstall them. Via Browser 7.3.3
+# (mark.via.gp, https://viayoo.com, sha256 245e02eb1106dfd4d97d27f5bb68e97a2db9fe543f72ab93dc6b587b0e2da4fd).
+PRODUCT_COPY_FILES += \
+    vendor/bestrom/prebuilt/preinstall/Via.apk:$(TARGET_COPY_OUT_PRODUCT)/etc/bestrom/preinstall/Via.apk
