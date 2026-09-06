@@ -13,5 +13,4 @@
      is in ro.bestrom.version.
 -->
 <resources>
-    <string name="voltage_version">Platform base version</string>
 </resources>
