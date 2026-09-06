@@ -15,55 +15,6 @@ Boot to recovery, then:
 
     adb sideload BestROM-3.0-peridot-20260906-0416-UNOFFICIAL.zip
 
-Dirty flash over 2110, 2047, 2007 or 1622 is supported. No wipe
-required. Kernel and modules are unchanged since 1622.
-
-
-Changes since 2026-09-05-2110
------------------------------
-Back to the stock Android UI and theme. The flat monochrome true-black
-theme from 2047 is reverted in full:
-
-  * Material You colour engine back to the stock TONAL_SPOT default; the
-    black-surface override is removed.
-  * Window and shade blur back on (stock VoltageOS behaviour).
-  * Launcher themed icons back to off by default.
-  * Stock default Quick Settings tile set and stock status-bar icon
-    exclusions; icon-animation vibration back to stock.
-  * Default wallpaper back to the previous 1080x2400 black asset.
-
-Kept from 2110 (chosen explicitly): battery percentage shown by default,
-and the 0.75x animation-scale first-boot seeds.
-
-Everything else (the 2007 framework changes, kernel, blobs) is unchanged.
-
-Known issues
-  * A system_server crash was reported on the themed builds (2047/2110).
-    Its cause is not yet identified; the device log is still being
-    collected. Nothing in the theme ran inside system_server, so the
-    revert is not assumed to fix it.
-
-
-Previous release
-================
-
-BestROM 3.0 for POCO F6 (peridot)
-=================================
-
-Release:   3.0-peridot-20260906-0414-UNOFFICIAL
-Package:   BestROM-3.0-peridot-20260906-0416-UNOFFICIAL.zip (2763838299 bytes)
-sha256:    210c773ff5ef47572654f75f57e12e282e3e0bae2558b2159623cf7d9e80cf91
-Android:   17 (SDK 37), AOSP android-17.0.0_r1, VoltageOS 6.1 base
-Kernel:    6.1.176 GKI (android14-6.1), Theettam 2.7 lts176 (unchanged)
-Patch:     platform 2026-08-01, vendor 2026-06-01 (OS3.0.302.0.WNPMIXM blobs)
-Previous:  2026-09-05-2110
-
-Flashing
---------
-Boot to recovery, then:
-
-    adb sideload BestROM-3.0-peridot-20260906-0416-UNOFFICIAL.zip
-
 Dirty flash over any 2026-09-05 build or 2026-08-27 is supported. No
 wipe required. Kernel and modules are unchanged since 1622.
 
