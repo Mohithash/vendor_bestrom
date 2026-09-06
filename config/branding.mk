@@ -19,7 +19,13 @@ BESTROM_VERSION_MINOR := 0
 BESTROM_VERSION := $(BESTROM_VERSION_MAJOR).$(BESTROM_VERSION_MINOR)
 
 # Never OFFICIAL unless BestROM actually publishes an official device list.
-BESTROM_BUILD_TYPE ?= UNOFFICIAL
+# Official BestROM builds come from the maintainer's environment (BESTROM_OFFICIAL=true),
+# the same switch vendor/voltage/config/version.mk honours.
+ifeq ($(BESTROM_OFFICIAL),true)
+BESTROM_BUILD_TYPE := OFFICIAL
+else
+BESTROM_BUILD_TYPE := UNOFFICIAL
+endif
 
 # Matches VoltageOS's own scheme (vendor/voltage/config/version.mk) so the two
 # build dates in build.prop agree.
