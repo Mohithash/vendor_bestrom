@@ -1,6 +1,64 @@
 BestROM 3.0 for POCO F6 (peridot)
 =================================
 
+Release:   3.0-peridot-20260906-0853-UNOFFICIAL
+Package:   BestROM-3.0-peridot-20260906-0854-UNOFFICIAL.zip (2766635024 bytes)
+sha256:    5f3f2ebc98b8677a2de6b52bebe34a09aaf8dba01731bc06b394d3edb26d5471
+Android:   17 (SDK 37), AOSP android-17.0.0_r1, VoltageOS 6.1 base
+Kernel:    6.1.176 GKI (android14-6.1), Theettam 2.7 lts176 (unchanged)
+Patch:     platform 2026-08-01, vendor 2026-06-01 (OS3.0.302.0.WNPMIXM blobs)
+Previous:  2026-09-06-0551
+
+Flashing
+--------
+Boot to recovery, then:
+
+    adb sideload BestROM-3.0-peridot-20260906-0854-UNOFFICIAL.zip
+
+Dirty flash over 0551, 0416 or any 2026-09-05 build is supported. No
+wipe required. Kernel and modules are unchanged since 1622.
+
+
+Changes since 2026-09-06-0551
+-----------------------------
+About
+  * The build-status row reads 'Official by Sal'; tapping it opens
+    https://github.com/Mohithash. The 'Platform base' row is removed
+    (Build number carries the version).
+
+Biometrics: VoltageOS's implementation, BestROM's name
+  * Face unlock and fingerprint code are VoltageOS's own: our earlier
+    rename and bind fix and the two SystemUI UDFPS guards from 0551 are
+    reverted, VoltageOS's rebrand and its follow-up fixup are applied.
+    On top of that the app is renamed to com.bestrom.faceunlock in one
+    consistent step, including a jarjar rule that relocates the
+    references inside the prebuilt vendor jar, which the earlier rename
+    missed and which is why it crashed. Re-enrol face data.
+
+Settings
+  * Powerhub is now 'Custom Tweaks' with a rocket icon.
+
+Browser
+  * Via Browser 7.3.3 (mark.via.gp) is preloaded as a normal, removable
+    user app: a new BestromPreinstaller installs it once on first boot
+    from /product/etc/bestrom/preinstall, and an uninstall sticks. A
+    Jellyfish package entry that referred to nothing is dropped.
+
+Phone
+  * Up to 10000 call log entries are kept per SIM (was 500).
+
+Known issues
+  * Not yet verified on device: face-unlock enrolment (now VoltageOS's
+    implementation) and fingerprint enrolment. Play Integrity is
+    unaffected.
+
+
+Previous release
+================
+
+BestROM 3.0 for POCO F6 (peridot)
+=================================
+
 Release:   3.0-peridot-20260906-0549-UNOFFICIAL
 Package:   BestROM-3.0-peridot-20260906-0551-UNOFFICIAL.zip (2763843342 bytes)
 sha256:    558818f72794d588d40f4fd4b6c824e21907c9d776e6c8c77159431d613caca2
