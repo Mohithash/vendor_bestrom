@@ -1,6 +1,55 @@
 BestROM 3.0 for POCO F6 (peridot)
 =================================
 
+Release:   3.0-peridot-20260906-0519-UNOFFICIAL
+Package:   BestROM-3.0-peridot-20260906-0521-UNOFFICIAL.zip (2763838151 bytes)
+sha256:    790b2c4f992377b8c4b97081c6c289000d08d6d114d45c73186157dc8cdf0825
+Android:   17 (SDK 37), AOSP android-17.0.0_r1, VoltageOS 6.1 base
+Kernel:    6.1.176 GKI (android14-6.1), Theettam 2.7 lts176 (unchanged)
+Patch:     platform 2026-08-01, vendor 2026-06-01 (OS3.0.302.0.WNPMIXM blobs)
+Previous:  2026-09-06-0416
+
+Flashing
+--------
+Boot to recovery, then:
+
+    adb sideload BestROM-3.0-peridot-20260906-0521-UNOFFICIAL.zip
+
+Dirty flash over 0416 or any 2026-09-05 build is supported. No wipe
+required. Kernel and modules are unchanged since 1622.
+
+
+Changes since 2026-09-06-0416
+-----------------------------
+Device tree only (stock UI).
+
+Theme
+  * The last two overrides of the old monochrome pass are gone from the
+    framework overlay: background_device_default_dark (forced #000000)
+    and config_defaultNotificationColor (grey). Stock Material You values
+    apply again in dark mode and for notification accents.
+
+Display
+  * The stock Double-tap to wake toggle is shown in Settings > Display
+    (config_supportDoubleTapWake). The feature was already enabled and
+    supported; only the switch was hidden.
+  * TEST: ro.surface_flinger.max_frame_buffer_acquired_buffers 3 -> 2
+    (the AOSP default; 3 is the Qualcomm reference value). With 3, HWUI
+    reports high-input-latency frames (triple buffered but on time) on
+    10-45% of frames in the launcher, SystemUI and the shade. If the
+    before/after measurement shows more dropped frames with 2, this
+    goes back to 3 in the next build.
+
+Known issues
+  * Not yet verified on device. Play Integrity is unaffected.
+
+
+Previous release
+================
+
+BestROM 3.0 for POCO F6 (peridot)
+=================================
+
 Release:   3.0-peridot-20260906-0414-UNOFFICIAL
 Package:   BestROM-3.0-peridot-20260906-0416-UNOFFICIAL.zip (2763838299 bytes)
 sha256:    210c773ff5ef47572654f75f57e12e282e3e0bae2558b2159623cf7d9e80cf91
