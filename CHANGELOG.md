@@ -1,6 +1,63 @@
 BestROM 3.0 for POCO F6 (peridot)
 =================================
 
+Release:   3.0-peridot-20260906-0414-UNOFFICIAL
+Package:   BestROM-3.0-peridot-20260906-0416-UNOFFICIAL.zip (2763838299 bytes)
+sha256:    210c773ff5ef47572654f75f57e12e282e3e0bae2558b2159623cf7d9e80cf91
+Android:   17 (SDK 37), AOSP android-17.0.0_r1, VoltageOS 6.1 base
+Kernel:    6.1.176 GKI (android14-6.1), Theettam 2.7 lts176 (unchanged)
+Patch:     platform 2026-08-01, vendor 2026-06-01 (OS3.0.302.0.WNPMIXM blobs)
+Previous:  2026-09-05-2110
+
+Flashing
+--------
+Boot to recovery, then:
+
+    adb sideload BestROM-3.0-peridot-20260906-0416-UNOFFICIAL.zip
+
+Dirty flash over any 2026-09-05 build or 2026-08-27 is supported. No
+wipe required. Kernel and modules are unchanged since 1622.
+
+
+Changes since 2026-09-05-2110
+-----------------------------
+UI back to stock
+  * The 2047 look is reverted: no forced true-black surfaces, the
+    Material You style defaults to TONAL_SPOT again, window and shade
+    blur are back on, themed icons are off by default, and the default
+    Quick Settings set, status-bar icons and wallpaper are stock
+    VoltageOS. Anything set in Wallpaper & style is untouched.
+  * Kept from 2110: battery percentage in the status bar by default,
+    and the 0.75x animation-scale seeds (first boot only).
+  * Kept: the nine framework changes from 2007 (Play Integrity
+    hardening, crash fixes, media and binder fixes). None of them is
+    visual.
+
+Third-audit fixes
+  * TrickyStore's keybox revocation check runs only in
+    com.google.android.gms and com.android.vending instead of every
+    process that requests key attestation. Warn-only, unchanged.
+  * The setup wizard no longer links https://lineageos.org/legal; it
+    points at the project's repository.
+  * vendor.prop no longer carries ro.surface_flinger.supports_background_blur;
+    the system property is the only source.
+
+Reviewed and kept
+  * GmsCompat, GmsCompatConfig, GmsCompatLib are required: Play services
+    run sandboxed through GmsCompat; no privileged Google apps ship.
+  * FaceUnlock is a working feature; opt out with
+    TARGET_FACE_UNLOCK_SUPPORTED := false.
+
+Known issues
+  * Not yet verified on device. Play Integrity is unaffected.
+
+
+Previous release
+================
+
+BestROM 3.0 for POCO F6 (peridot)
+=================================
+
 Release:   3.0-peridot-20260905-2109-UNOFFICIAL
 Package:   BestROM-3.0-peridot-20260905-2110-UNOFFICIAL.zip (2763843700 bytes)
 sha256:    e521186945268495db2239ba5371d1b2bb67b72c51957927aedb043b27060430
