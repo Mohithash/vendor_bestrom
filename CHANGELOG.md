@@ -1,6 +1,43 @@
 BestROM 3.0 for POCO F6 (peridot)
 =================================
 
+Release:   3.0-peridot-20260906-1056-OFFICIAL
+Package:   BestROM-3.0-peridot-20260906-1056-OFFICIAL.zip (2766633969 bytes)
+sha256:    480a955452fe343943dc8e38cf2d633517e7d9e8b519c0ff8cb4ab51d819f27c
+Android:   17 (SDK 37), AOSP android-17.0.0_r1, VoltageOS 6.1 base
+Kernel:    6.1.176 GKI (android14-6.1), Theettam 2.7 lts176 (unchanged)
+Patch:     platform 2026-08-01, vendor 2026-06-01 (OS3.0.302.0.WNPMIXM blobs)
+Previous:  2026-09-06-1029 (first official build)
+
+Flashing
+--------
+Boot to recovery, then:
+
+    adb sideload BestROM-3.0-peridot-20260906-1056-OFFICIAL.zip
+
+Dirty flash over any earlier build. No wipe required. First boot after
+flashing takes a few minutes longer while apps are compiled.
+
+
+Changes since 2026-09-06-1029
+-----------------------------
+Custom Tweaks (Powerhub)
+  * Specter added as a Play Integrity fingerprint source, and the keybox
+    can be fetched online. (Maintainer commit e5b606d.)
+
+Notes
+  * Built from an interactive shell rather than the release wrapper, so
+    ro.build.user reads android-build instead of bestrom. The stock
+    POCO fingerprint spoof is unaffected. Everything else is identical
+    to 1029.
+
+
+Previous release
+================
+
+BestROM 3.0 for POCO F6 (peridot)
+=================================
+
 Release:   3.0-peridot-20260906-1028-OFFICIAL
 Package:   BestROM-3.0-peridot-20260906-1029-OFFICIAL.zip (2766631716 bytes)
 sha256:    f2ff19b86b0013ac253cdffe3c5db7f0cf8b3d82ebf91e762e5b434b0da827bc
