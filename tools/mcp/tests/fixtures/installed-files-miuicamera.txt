@@ -1,0 +1,8 @@
+  87654321  /system/priv-app/MiuiCamera/MiuiCamera.apk
+   1234567  /odm/lib64/libcampostproc_client.so
+    987654  /odm/lib64/libalgoup_jni.xiaomi.so
+    456789  /odm/lib64/libmianode_jni.xiaomi.so
+    123456  /odm/lib64/libcampostproc.so
+     65432  /odm/etc/camera/xiaomi/miuicamerayuv2/hal.json
+   2345678  /system/priv-app/Settings/Settings.apk
+    345678  /system/product/app/Freezer/Freezer.apk

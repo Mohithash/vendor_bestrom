@@ -1,0 +1,77 @@
+# BestROM MCP server — shipped defaults.
+#
+# Precedence: structural defaults in config.py  <  this file  <  the file named
+# by $BESTROM_MCP_CONFIG  <  BESTROM_MCP_* environment variables.
+#
+# This file holds no credential of any kind and never will. GitHub auth comes
+# from ~/.gitconfig http.extraheader and SourceForge from the ssh agent; the
+# server neither reads, prints nor forwards either.
+
+[tree]
+# root is left empty on purpose: it is derived by walking up from this file
+# (vendor/bestrom/tools/mcp -> tree root) and can be overridden with
+# BESTROM_TREE or BESTROM_MCP_TREE_ROOT.
+root = ""
+out_dir = "out/target/product/peridot"
+logs_dir = "/serverhive1/sal/bootloop-logs"
+dl_dir = "/serverhive1/sal/dl"
+min_free_gb = 200
+
+[build]
+script = "build-bestrom-run.sh"
+lunch = "bestrom_peridot-cp2a-user"
+goal = "bestrom"
+jobs = 64
+official = true
+unit_prefix = "bestrom-build-"
+log_prefix = "build-"
+zip_glob = "BestROM-*-OFFICIAL.zip"
+
+[verify]
+profile = "peridot"
+profiles_dir = "profiles"
+marker_dir = "/serverhive1/sal/bootloop-logs"
+
+[device]
+adb_port = 15038
+adb_host = "127.0.0.1"
+serial = "bc94484f"
+default_timeout_s = 60
+max_timeout_s = 300
+evidence_dir = "/serverhive1/sal/bootloop-logs/crash-sweep"
+allow_remote_sideload = false
+
+[release]
+chains = ["sweep", "aperture", "miuicamera", "hardening"]
+sourceforge_project = "bestrom"
+sourceforge_frs_path = "/home/frs/project/bestrom/peridot/"
+sourceforge_web_path = "/home/project-web/bestrom/htdocs/index.html"
+ota_repo = "/serverhive1/sal/bootloop-logs/bestrom_ota"
+ota_branch = "17"
+site_repo = "/serverhive1/sal/bootloop-logs/bestrom-project"
+pages_dir = "/serverhive1/sal/bootloop-logs/sf-release/pages"
+publish_timeout_s = 3600
+# Printed verbatim in the release README header. Leave a value empty and
+# release_prepare writes "(unknown)" there instead of inventing one.
+kernel = "6.1.176 GKI (android14-6.1), Theettam 2.8"
+base = "AOSP android-17.0.0_r1, VoltageOS 6.1 base"
+
+# "path remote branch" — the publish set, from chain-*-publish.sh.
+[push]
+projects = [
+    "device/xiaomi/peridot gh theettam-a17",
+    "frameworks/base bestrom voltage-17",
+    "frameworks/av bestrom bestrom-a17",
+    "packages/apps/Settings bestrom voltage-17",
+    "vendor/bestrom gh voltage-17",
+    "packages/apps/Freezer origin packages-apps-freezer",
+    "device/voltage/sepolicy bestrom voltage-17",
+]
+
+[safety]
+# allowlist_roots is extended with tree.root, logs_dir and dl_dir at load time.
+allowlist_roots = []
+# There is no require_confirm key. Which tools demand confirm=true is decided in
+# the tools themselves (config.CONFIRM_REQUIRED_TOOLS reports the real list to
+# bestrom://config); a key here would look like a control and enforce nothing.
+enable_publish = true

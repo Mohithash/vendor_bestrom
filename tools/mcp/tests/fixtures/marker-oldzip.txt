@@ -1,0 +1,3 @@
+build ok: BestROM-3.0-peridot-20260906-1056-OFFICIAL.zip (2766633969 bytes)
+== verify in image ==
+verify gate passed

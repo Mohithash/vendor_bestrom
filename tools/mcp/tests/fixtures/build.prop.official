@@ -1,0 +1,6 @@
+ro.bestrom.version=3.0-peridot-20260907-1010-OFFICIAL
+ro.bestrom.releasetype=OFFICIAL
+ro.bestrom.build.status=OFFICIAL
+ro.build.date.utc=1788000000
+ro.build.fingerprint=BestROM/peridot/peridot:17/BP1A/1010:user/release-keys
+ro.hardware.camera=xiaomi

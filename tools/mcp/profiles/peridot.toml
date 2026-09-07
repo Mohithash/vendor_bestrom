@@ -1,0 +1,137 @@
+# BestROM image gate for peridot, generalised out of chain-*-verify.sh.
+#
+# Every "must be present" check is paired with a "must be absent" one. Do not
+# add a check without its opposite: a presence-only gate passed an image that
+# carried both the old and the new camera, which is why forbidden = true is a
+# load-time requirement (see profiles/README.md).
+
+name = "peridot"
+description = "MiuiCamera build, Aperture absent, silent sound defaults, stock fsck_untrusted policy"
+
+# -- camera: MiuiCamera in, Aperture out --------------------------------
+
+[[check]]
+id = "miuicamera-apk-present"
+kind = "installed_files_count"
+description = "MiuiCamera.apk is packaged"
+files = "installed-files.txt"
+pattern = "priv-app/MiuiCamera/MiuiCamera\\.apk"
+op = "eq"
+expected = 1
+
+[[check]]
+id = "miuicamera-algo-libs"
+kind = "installed_files_count"
+description = "The MIVI post-processing libraries came along with the app"
+files = "installed-files*.txt"
+pattern = "campostproc|algoup_jni|mianode_jni"
+ignore_case = true
+op = "eq"
+expected = 4
+
+[[check]]
+id = "aperture-apk-absent"
+kind = "installed_files_count"
+description = "Aperture is not also staged - two cameras in one image is the stale-staging bug"
+files = "installed-files*.txt"
+pattern = "/Aperture/Aperture\\.apk"
+ignore_case = true
+op = "eq"
+expected = 0
+forbidden = true
+
+[[check]]
+id = "miuicamera-sepolicy"
+kind = "sepolicy_grep"
+description = "platform_app_36 may hand the camera HAL its BGService callback over binder"
+files = "vendor/etc/selinux/vendor_sepolicy.cil"
+pattern = "platform_app(_all|_36)[^)]*hal_camera_default"
+op = "ge"
+expected = 1
+
+[[check]]
+id = "camera-hardware-prop"
+kind = "buildprop_value"
+description = "ro.hardware.camera=xiaomi, or the Xiaomi camera algorithms never load"
+files = "vendor/build.prop"
+key = "ro.hardware.camera"
+op = "eq"
+expected = "xiaomi"
+
+# -- sound and vibration seeds ------------------------------------------
+
+[[check]]
+id = "sound-seeds"
+kind = "arsc_string_count"
+description = "Six first-boot Settings seeds in the SettingsProvider RRO"
+apk = "SettingsProviderOverlayPeridotPOCO*.apk"
+pattern = "^def_(dtmf_tones_enabled|sound_effects_enabled|haptic_feedback|lockscreen_sounds_enabled|charging_sounds_enabled|charging_vibration_enabled)$"
+op = "eq"
+expected = 6
+
+[[check]]
+id = "vibration-intensity-defaults"
+kind = "aapt2_resource_count"
+description = "Four config_default*VibrationIntensity integers in FrameworkOverlayPeridot"
+apk = "FrameworkOverlayPeridot.apk"
+pattern = "integer/config_default(Ring|Notification|Alarm|Media)VibrationIntensity"
+op = "eq"
+expected = 4
+
+# -- SELinux: stock parity ----------------------------------------------
+
+[[check]]
+id = "fsck-untrusted-sysadmin-absent"
+kind = "sepolicy_grep"
+description = "No CAP_SYS_ADMIN grant to fsck_untrusted - AOSP calls that grant a code mistake"
+files = "*/etc/selinux/*.cil"
+pattern = "\\(allow fsck_untrusted self \\(capability"
+and_pattern = "sys_admin"
+op = "eq"
+expected = 0
+forbidden = true
+
+[[check]]
+id = "fsck-untrusted-neverallow-present"
+kind = "sepolicy_grep"
+description = "The stock neverallow that forbids it is back in the compiled policy"
+files = "*/etc/selinux/*.cil"
+pattern = "neverallow fsck_untrusted"
+and_pattern = "sys_admin"
+op = "ge"
+expected = 1
+
+[[check]]
+id = "oem-unlock-prop-absent"
+kind = "buildprop_value"
+description = "sys.oem_unlock_allowed is not fabricated; inventing it only gives detection tools a flag"
+files = "system/build.prop"
+key = "sys.oem_unlock_allowed"
+op = "ne"
+expected = "0"
+forbidden = true
+
+# -- identity and freshness ---------------------------------------------
+
+[[check]]
+id = "build-status-official"
+kind = "buildprop_value"
+description = "The wrapper's BESTROM_OFFICIAL reached /system/build.prop"
+files = "system/build.prop"
+key = "ro.bestrom.build.status"
+op = "eq"
+expected = "OFFICIAL"
+
+[[check]]
+id = "freezer-not-stale"
+kind = "apk_mtime_after"
+description = "Freezer.apk was rebuilt with this image, not carried over from an older out/"
+apk = "Freezer.apk"
+reference = "installed-files.txt"
+tolerance_s = 7200
+
+[[check]]
+id = "zip-size-sane"
+kind = "zip_size_delta"
+description = "The package did not grow or shrink by more than 200 MB against the previous build"
+max_abs_mb = 200
