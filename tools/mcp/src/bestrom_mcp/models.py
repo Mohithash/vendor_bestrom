@@ -37,7 +37,9 @@ class EnvReport(BaseModel):
     systemd_user_ok: bool
     build_in_flight: BuildInFlight
     adb_port_listener: bool
+    prebuilts_present: bool = True
     blockers: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
 
 
 class ProjectStatus(BaseModel):

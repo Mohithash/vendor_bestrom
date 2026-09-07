@@ -46,6 +46,13 @@ waste hours: no disk headroom, and a build already in flight.
 
 Rules:
 
+* Prebuilts too large for git are fetched, not synced.
+  `vendor/bestrom/tools/fetch-prebuilts.sh` downloads Cromite's 297 MB
+  SystemWebView and verifies its size, sha256 and GitHub release attestation.
+  The wrapper runs it before `lunch`, so a full build needs nothing by hand;
+  run it yourself after a fresh `repo sync` before `mka <module>`.
+  `config/branding.mk` hard-errors if the APK is missing, and `env_check`
+  warns. `BESTROM_SKIP_ATTESTATION=1` drops only the api.github.com call.
 * That wrapper is the build. It exports `BUILD_USERNAME`, `BUILD_HOSTNAME`,
   `BUILD_NUMBER` and `BESTROM_OFFICIAL`, which end up in
   `ro.build.fingerprint`. A bare `mka` leaks `eng.<user>` into the fingerprint,
