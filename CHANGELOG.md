@@ -1,6 +1,15 @@
 Unreleased (next build)
 =======================
 
+Tooling
+  * BestROM now ships an MCP server (vendor/bestrom/tools/mcp) so AI
+    agents can sync, build, verify the image, capture device evidence
+    and prepare a release through defined tools with the same gates the
+    chain scripts carry.
+  * AGENTS.md, CLAUDE.md and .mcp.json land at the tree root via repo
+    copyfile from vendor/bestrom/tools. After one repo sync a client
+    starts the server itself; it needs uv and Python 3.11 on the machine.
+
 Camera
   * MiuiCamera is the camera again (com.android.camera, Xiaomi's port).
     Aperture is dropped - bestrom_peridot.mk keeps PRODUCT_NO_CAMERA := true
