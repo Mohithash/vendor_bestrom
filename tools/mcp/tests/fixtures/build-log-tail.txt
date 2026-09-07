@@ -1,0 +1,5 @@
+[ 99% 1234/1234] Package OTA: out/target/product/peridot/BestROM-3.0-peridot-20260907-1010-OFFICIAL.zip
+FAILED: out/soong/.intermediates/frameworks/base/foo/bar.jar
+frameworks/base/core/java/android/Foo.java:42: error: cannot find symbol
+warning: [deprecation] something is deprecated
+=== 2026-09-07T10:29:50Z BUILD EXIT: 3 ===

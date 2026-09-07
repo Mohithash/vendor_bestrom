@@ -1,0 +1,4 @@
+build ok: BestROM-3.0-peridot-20260907-1010-OFFICIAL.zip (2767491225 bytes)
+== verify in image ==
+aperture-apk-absent [installed_files_count] expected eq 0, got 1 - FAIL
+VERIFY FAILED (aperture-apk-absent) - NOT pushing, NOT publishing

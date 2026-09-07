@@ -1,0 +1,5 @@
+def_dtmf_tones_enabled
+def_sound_effects_enabled
+def_haptic_feedback
+def_lockscreen_sounds_enabled
+def_charging_sounds_enabled

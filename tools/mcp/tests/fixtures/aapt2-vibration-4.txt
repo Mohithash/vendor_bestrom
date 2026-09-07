@@ -1,0 +1,5 @@
+      resource 0x7f0b0001 integer/config_defaultRingVibrationIntensity
+      resource 0x7f0b0002 integer/config_defaultNotificationVibrationIntensity
+      resource 0x7f0b0003 integer/config_defaultAlarmVibrationIntensity
+      resource 0x7f0b0004 integer/config_defaultMediaVibrationIntensity
+      resource 0x7f0b0005 integer/config_somethingElse

@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "bestrom": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "${CLAUDE_PROJECT_DIR:-.}/vendor/bestrom/tools/mcp",
+        "bestrom-mcp",
+        "--transport",
+        "stdio"
+      ],
+      "timeout": 600000
+    }
+  }
+}

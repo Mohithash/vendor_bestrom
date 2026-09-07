@@ -1,0 +1,4 @@
+(neverallow fsck_untrusted self (capability (sys_admin)))
+(allow fsck_untrusted self (capability (dac_override dac_read_search)))
+(allow platform_app_36 hal_camera_default (binder (call transfer)))
+(allow platform_app_all hal_camera_default (binder (call transfer)))

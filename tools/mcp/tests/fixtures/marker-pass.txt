@@ -1,0 +1,5 @@
+build ok: BestROM-3.0-peridot-20260907-1010-OFFICIAL.zip (2767491225 bytes)
+== verify in image ==
+miuicamera-apk-present [installed_files_count] expected eq 1, got 1 - ok
+verify gate passed
+BUILD+VERIFY DONE 10:29:50Z: BestROM-3.0-peridot-20260907-1010-OFFICIAL.zip (2767491225 bytes)
