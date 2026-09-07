@@ -1,0 +1,82 @@
+MiXplorer: the author's permission to preinstall it in a ROM
+============================================================
+
+This file exists so the permission BestROM relies on does not live only in a
+third party's bug tracker. It records what was read, where, and when.
+
+Primary source
+--------------
+
+XDA thread "[APP][2.3+] MiXplorer v6.x Released (Fully-featured File Manager)",
+post #6 by HootanParsa (the author), permalink
+
+    https://forum.xda-developers.com/showpost.php?p=23374610&postcount=6
+
+which today redirects to
+
+    https://xdaforums.com/t/app-2-3-mixplorer-v6-x-released-fully-featured-file-manager.1523691/
+
+xdaforums.com answers 403 to every automated request from this build host, so
+the post could not be read live. It was read instead from the Internet Archive:
+
+    http://web.archive.org/web/20150425104234/http://forum.xda-developers.com/showpost.php?p=23374610&postcount=6
+
+Retrieved 2026-09-07. That snapshot is dated 2015-04-25 and the post itself
+carries "Last edited by HootanParsa; 25th January 2015". It is the same post id
+that IzzyOnDroid cites, in an older revision - the author has edited it since,
+which is why the wording below is not word for word the wording quoted in 2024.
+The permission is the same in both revisions. The Wayback Machine holds no
+snapshot of the current xdaforums URL and none of the post after 2015.
+
+Verbatim, from the "Sharing:" section at the end of that post
+-------------------------------------------------------------
+
+    Sharing:
+    * (v4.x, v3.x, v2.x) All of the developers have free license to add this
+    app in their custom ROM as default.
+    Please put the app in '/data' folder not '/system', to let users update it
+    in the future.
+    * (v4.x) Modifying APK not permitted because of security reasons.
+
+The same post opens with "Credits & Copyrights", credits the translators, and
+states plainly that the app "is not open-source".
+
+Current wording of the same post, as quoted by IzzyOnDroid
+----------------------------------------------------------
+
+https://gitlab.com/IzzyOnDroid/repo/-/issues/44 quotes post #6 through the
+permalink above, for the same purpose (deciding whether MiXplorer could be
+redistributed):
+
+    All developers and companies are allowed to add MiXplorer and its free
+    addons in their ROMs as pre-installed apps.
+    Sharing the modified APK file and with different signature is not
+    permitted.
+
+Read at that URL on 2026-09-07 and confirmed to carry exactly that text.
+
+What BestROM does with it
+-------------------------
+
+Both revisions grant the same two things and withhold the same one:
+
+* preinstalling the author's own APK in a ROM is allowed;
+* modifying it, or shipping it under a different signature, is not.
+
+So `MiXplorer.apk` is a plain `PRODUCT_COPY_FILES` entry, copied byte for byte,
+never repacked and never re-signed, and release signing is told to skip it
+(see README.md, "Release signing").
+
+The 2015 revision adds a request the current wording drops: put the app in
+`/data`, not `/system`, so users can update it. BestROM does that - the APK
+sits in `/product/etc/bestrom/preinstall/` as data, and `BestromPreinstaller`
+installs it on first boot as an ordinary user app in `/data`, which the user can
+update from the author's own channel or uninstall outright. It is not a system
+app.
+
+Still open
+----------
+
+A first-hand read of the *current* post, or one line by email to
+MiXplorer@gmail.com, would settle this without the Archive. Neither has been
+obtained; the 2015 snapshot is the strongest primary evidence in the tree.

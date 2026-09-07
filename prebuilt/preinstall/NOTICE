@@ -28,9 +28,21 @@ The author's grant, as quoted from that thread in IzzyOnDroid repository issue
     addons in their ROMs as pre-installed apps. Sharing the modified APK file
     and with different signature is not permitted.
 
-Second-hand quote, not read at the primary source: the XDA post and
-mixplorer.com/legal/ both refuse automated requests from this build host. See
-README.md; archiving the original post is a release task.
+That quote is the post's current wording, which could not be read first-hand:
+xdaforums.com answers 403 to automated requests from this build host. An
+archived revision of the same post (Wayback, 2015-04-25) was read, and grants
+the same thing in the author's own words:
+
+    Sharing:
+    * (v4.x, v3.x, v2.x) All of the developers have free license to add this
+    app in their custom ROM as default.
+    Please put the app in '/data' folder not '/system', to let users update it
+    in the future.
+    * (v4.x) Modifying APK not permitted because of security reasons.
+
+mixplorer-rom-grant-xda.txt in this directory records both revisions, the URLs
+and the dates. BestROM installs the app into /data as a removable user app, as
+that revision asks, and not as a system app.
 
 BestROM therefore ships the author's own signed APK unmodified, and never
 repacks, re-zipaligns or re-signs it.
@@ -46,4 +58,6 @@ own signed APK, unmodified.
 
 No written grant for preinstalling Via in a ROM is recorded in this tree - it
 was added before this file existed. Getting one, or dropping the preload, is an
-open item; it is not settled by the fact that the app is free of charge.
+open item; it is not settled by the fact that the app is free of charge, and it
+blocks a public release the same way a missing source offer would. Until it is
+answered, Via ships on nothing but the author's silence.

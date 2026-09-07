@@ -22,6 +22,16 @@ already handled.
     certificate DN           CN=Various Tu, L=广西, ST=广西, C=CN
     certificate SHA-256      3df7f89d3b8d1315f05710c914fccbcf3a4e24980afddccb8dcebde90836a390
 
+**Release gate: Via has no redistribution permission on record.** It predates
+this directory's paperwork. The signer above identifies who built the APK; it is
+not a licence to ship it. Proprietary freeware is free of charge, not free to
+redistribute, so before a public build either get a one-line written OK from the
+author (viayoo.com) to preinstall Via in a ROM - save it beside `NOTICE` with
+the date - or drop `Via.apk` from this directory and its line from the
+`PRODUCT_COPY_FILES` block in `config/branding.mk`. MiXplorer, added later, has
+the grant Via lacks; the two sit in the same block and are not in the same
+position.
+
 ### MiXplorer.apk
 
 MiXplorer, Hootan Parsa's file manager. The arm64 split (peridot is
@@ -57,15 +67,21 @@ APK file and with different signature is not permitted." So this stays a plain
 directory carries the attribution for both apps, since `PRODUCT_COPY_FILES`
 attaches no license metadata and neither app reaches the generated NOTICE.
 
-That wording is **second-hand**. It was read at
-https://gitlab.com/IzzyOnDroid/repo/-/issues/44, where the reporter quotes the
-developer; the primary source (the XDA thread) and `mixplorer.com/legal/` both
-refuse automated requests from this build host, and mixplorer.com publishes no
-terms page. Before a public release, archive the XDA post that carries the
-grant (archive.org snapshot or PDF, saved next to this file) or get a one-line
-written OK to `MiXplorer@gmail.com` and record the date. Until one of those
-exists the grant is credible, not verified, and this paragraph should keep
-saying so.
+That exact wording is quoted from
+https://gitlab.com/IzzyOnDroid/repo/-/issues/44, which cites the author's own
+XDA post #6 (permalink `showpost.php?p=23374610&postcount=6`). xdaforums.com
+answers 403 to automated requests from this build host, so the live post could
+not be read - but an archived revision of that same post could:
+`mixplorer-rom-grant-xda.txt` in this directory records the Wayback snapshot,
+its date, and the author's wording in it, which grants the same thing in older
+words ("All of the developers have free license to add this app in their custom
+ROM as default") and withholds the same thing ("Modifying APK not permitted").
+The archived revision also asks that the app go in `/data` rather than
+`/system`, so users can update it, which is what the preinstaller does.
+
+That is primary evidence, one revision old. A first-hand read of the current
+post, or one line to `MiXplorer@gmail.com`, would close it completely; neither
+has been obtained.
 
 Archive formats beyond ZIP (7z, RAR, TAR, ISO) need the separate free MiX
 Archive add-on (`com.mixplorer.addon.archive`), which is not shipped; the same
@@ -75,9 +91,20 @@ Notable permissions: `MANAGE_EXTERNAL_STORAGE` (All files access, a Settings
 special access the user must grant), `REQUEST_INSTALL_PACKAGES` /
 `REQUEST_DELETE_PACKAGES`, `QUERY_ALL_PACKAGES`, `SYSTEM_ALERT_WINDOW`,
 `PACKAGE_USAGE_STATS`, `WRITE_SETTINGS` and `ACCESS_SUPERUSER`. It requests no
-camera, location, microphone, contacts, phone-state or SMS permission. The
-privacy policy (mixplorer.com/legal/privacy/) states no PII collection and no
-analytics; all network use is user-initiated.
+camera, location, microphone, contacts, phone-state or SMS permission.
+
+The privacy policy at https://mixplorer.com/legal/privacy/ **is** readable (last
+updated 2 January 2026; only the XDA forum refuses this host). Read there
+first-hand: no personally identifiable information is collected, stored or
+uploaded; no third-party ads, no advertising identifiers, no tracking services;
+credentials for services without OAuth - FTP, Mega.nz, Mail.ru - are encrypted
+in the app's private storage and never sent anywhere; the device id is used only
+as the key that encrypts the app's own settings file; local Wi-Fi MAC addresses
+are kept on the device for the SMB client; the Google Drive integration uses the
+`drive.file` scope, so it sees only files the user opens or creates with it, and
+gets no name, email or profile. The page carries no licence or redistribution
+clause - mixplorer.com publishes no terms page - so it says nothing about the
+preload permission, which is why the XDA post is cited separately above.
 
 ## Adding another
 
@@ -101,6 +128,7 @@ is handled in its own try/catch, so one bad APK never stops the batch. An
 install that fails for a reason a retry cannot fix - wrong ABI, malformed or
 conflicting APK - is marked done and not tried again; one that fails for lack
 of space, or is cut short by a reboot, is retried on the next boot.
+
 
 ## Release signing
 
