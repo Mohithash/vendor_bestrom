@@ -21,14 +21,6 @@ Camera
     noisy QSPM HIDL probe, and the vendor camera/display/audio property and
     /proc/pressure reads MiuiCamera does at launch.
 
-Privacy
-  * MiuiCamera now ships with INTERNET revoked. It runs Firebase Crashlytics
-    and uploads to firebaselogging-pa.googleapis.com, fetches cloud config and
-    watermarks from Xiaomi CDNs, and pings baidu.com for the time - none of it
-    needed to take a photo. Grant it back in Datura if you want those.
-    NOTE: this only applies on a clean flash or a new user/work profile. If you
-    dirty-flash over an existing install, revoke it once in Datura by hand.
-
 
 BestROM 3.0 for POCO F6 (peridot)
 =================================
