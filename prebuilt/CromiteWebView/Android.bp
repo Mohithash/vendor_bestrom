@@ -1,0 +1,100 @@
+//
+// SPDX-FileCopyrightText: BestROM
+// SPDX-License-Identifier: Apache-2.0
+//
+// Cromite's SystemWebView build, shipped in place of AOSP's
+// external/chromium-webview prebuilt. It keeps the AOSP package name
+// com.android.webview, so no change to the framework's provider list is
+// needed: vendor/voltage/overlay/common already overlays
+// frameworks/base/core/res/res/xml/config_webview_packages.xml with an entry
+// for com.android.webview, availableByDefault, isFallback and with no
+// <signature>. isFallback is what makes the boot path force-enable it:
+// WebViewUpdateServiceImpl2 calls installExistingPackageForAllUsers and
+// enablePackageForAllUsers on the fallback provider. The missing <signature>
+// costs nothing either way, because a preinstalled provider skips the
+// signature check regardless of key
+// (WebViewUpdateServiceImpl2.providerHasValidSignature returns true for any
+// system app).
+//
+// overrides: ["webview"] drops the AOSP module, which
+// build/make/target/product/media_product.mk adds to PRODUCT_PACKAGES.
+// external/chromium-webview itself stays in the tree untouched.
+//
+// preprocessed: true is mandatory next to presigned: true, not stylistic.
+// build/soong/scripts/check_prebuilt_presigned_apk.py rejects any presigned
+// APK with targetSdkVersion >= 30 without it, because zipalign would strip the
+// v2 signing block that this APK is signed with (it carries no v1 JAR
+// signature at all, so the result would not install).
+//
+// presigned: true is also a trust decision, and it is deliberate. The AOSP
+// module it replaces uses default_dev_cert: true, so today's webview.apk is
+// re-signed with the BestROM release key and only BestROM can produce an
+// installable com.android.webview update. Shipping Cromite's own signature
+// instead means the bytes on the device stay byte-identical to the artifact
+// GitHub attests to (see README.md), and that Cromite-signed updates install
+// over the system copy - at the cost of handing update authority for the
+// component that renders untrusted web content to CN=CromiteOrg, a key whose
+// identity the project publishes nowhere. default_dev_cert: true is the
+// alternative that keeps that authority with the ROM key; it would forfeit
+// both the byte-identity and the upstream update path.
+//
+// required: names the two native support libraries the framework loads for
+// any WebView provider (libwebviewchromium_loader is dlopen'd by
+// WebViewFactory, libwebviewchromium_plat_support by the provider itself).
+// build/make/target/product/media_system.mk already puts both in
+// PRODUCT_PACKAGES independently, so this is documentation as much as a
+// dependency, but it matches AOSP's own module and survives that file
+// changing.
+//
+
+package {
+    default_applicable_licenses: ["vendor_bestrom_prebuilt_CromiteWebView_license"],
+}
+
+// Cromite is GPL-3.0 on top of Chromium's BSD-3-Clause base. LICENSE is
+// Cromite's own text at the shipped tag, LICENSE.chromium is Chromium's at
+// 148.0.7778.168. Without this the module carries no license_kinds at all and
+// the generated NOTICE says nothing about a GPL-3.0 payload.
+license {
+    name: "vendor_bestrom_prebuilt_CromiteWebView_license",
+    visibility: [":__subpackages__"],
+    license_kinds: [
+        "SPDX-license-identifier-GPL-3.0",
+        "SPDX-license-identifier-BSD-3-Clause",
+    ],
+    license_text: [
+        "LICENSE",
+        "LICENSE.chromium",
+    ],
+}
+
+android_app_import {
+    name: "CromiteWebView",
+
+    apk: "CromiteWebView.apk",
+
+    presigned: true,
+    preprocessed: true,
+
+    product_specific: true,
+
+    overrides: [
+        "webview",
+    ],
+
+    required: [
+        "libwebviewchromium_loader",
+        "libwebviewchromium_plat_support",
+    ],
+
+    // Mirrors AOSP's webview module minus com.android.extensions.xr, which
+    // this APK's manifest does not declare a uses-library entry for.
+    optional_uses_libs: [
+        "android.test.base",
+        "androidx.window.extensions",
+    ],
+
+    dex_preopt: {
+        enabled: true,
+    },
+}
