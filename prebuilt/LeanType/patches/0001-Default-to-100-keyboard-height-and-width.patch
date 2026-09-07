@@ -1,0 +1,33 @@
+From f8c5ceb048037627a56d53d0e37c85ccdac38ff1 Mon Sep 17 00:00:00 2001
+From: Mohithash <shahjespuri@gmail.com>
+Date: Mon, 7 Sep 2026 19:47:35 +0000
+Subject: [PATCH] LeanType: Default to 100% keyboard height and width
+
+Ship a full-size keyboard out of the box instead of
+upstream's 77% height and 15% side padding. Both are
+plain multipliers read with getFloat(key, default),
+so this only moves the default: the Appearance
+sliders still work and a user who has already moved
+either one keeps their value.
+---
+ .../main/java/helium314/keyboard/latin/settings/Defaults.kt   | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/app/src/main/java/helium314/keyboard/latin/settings/Defaults.kt b/app/src/main/java/helium314/keyboard/latin/settings/Defaults.kt
+index 94aa9cbe6..cc0365971 100644
+--- a/app/src/main/java/helium314/keyboard/latin/settings/Defaults.kt
++++ b/app/src/main/java/helium314/keyboard/latin/settings/Defaults.kt
+@@ -117,11 +117,11 @@ object Defaults {
+     @JvmField
+     val PREF_SPLIT_SPACER_SCALE = Array(2) { DEFAULT_SIZE_SCALE }
+     @JvmField
+-    val PREF_KEYBOARD_HEIGHT_SCALE = arrayOf(0.77f, 0.45f)
++    val PREF_KEYBOARD_HEIGHT_SCALE = arrayOf(DEFAULT_SIZE_SCALE, DEFAULT_SIZE_SCALE)
+     @JvmField
+     val PREF_BOTTOM_PADDING_SCALE = arrayOf(1.05f, 0f)
+     @JvmField
+-    val PREF_SIDE_PADDING_SCALE = Array(4) { 0.15f }
++    val PREF_SIDE_PADDING_SCALE = Array(4) { 0f }
+     const val PREF_FONT_SCALE = 0.85f
+     const val PREF_EMOJI_FONT_SCALE = DEFAULT_SIZE_SCALE
+     const val PREF_EMOJI_KEY_FIT = true

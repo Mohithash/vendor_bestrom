@@ -9,13 +9,23 @@
 // vendor/voltage/config/common_mobile.mk. Doing it here rather than editing
 // either file keeps BestROM out of vendor/voltage.
 //
-// preprocessed: true is mandatory next to presigned: true.
-// build/soong/scripts/check_prebuilt_presigned_apk.py rejects any presigned
-// APK with targetSdkVersion >= 30 without it. Keeping the upstream signature
-// matters here beyond the build check: only an APK signed with LeanBit Lab's
-// key can be installed as an update over the system copy, and F-Droid's own
-// build of com.leanbitlab.leantype carries that same key, so re-signing with
-// the release key would permanently block F-Droid and GitHub updates.
+// This is a BestROM build of github.com/Mohithash/LeanType branch bestrom-17 -
+// upstream v4.2.0 plus one commit defaulting the keyboard to 100% height and no
+// side padding, which are compiled-in Kotlin constants no RRO can reach. The
+// same commit is kept in patches/ so the binary can be reproduced from the
+// upstream tag alone. See README.md.
+//
+// LeanType.apk is the unsigned Gradle release output, so this is an ordinary
+// signed module: default_dev_cert: true makes Soong sign and zipalign it with
+// PRODUCT_DEFAULT_DEV_CERTIFICATE, the identity every BestROM app module
+// carries. Do not go back to presigned/preprocessed for a fork build -
+// sign_target_files_apks skips presigned modules, so the keyboard would stay
+// on the old key while the rest of the image rotated to release keys.
+//
+// The cost of the fork is the signature: the upstream artifact carried LeanBit
+// Lab's key, the same one F-Droid publishes for com.leanbitlab.leantype, which
+// let an F-Droid or GitHub build install as an update over the system copy.
+// This one cannot, so the OTA is the keyboard's only update channel.
 //
 // The app is not privileged and requests no signature-level permissions, so it
 // needs no privapp-permissions file and no seapp_contexts entry; it runs in
@@ -47,8 +57,7 @@ android_app_import {
 
     apk: "LeanType.apk",
 
-    presigned: true,
-    preprocessed: true,
+    default_dev_cert: true,
 
     product_specific: true,
 
