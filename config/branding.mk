@@ -127,6 +127,21 @@ PRODUCT_PACKAGES += \
 #                                             VoltageMaintainerPreference and
 #                                             HomepageToastManager
 
+# Cromite's SystemWebView build in place of the AOSP prebuilt. The module's
+# overrides: ["webview"] drops the one build/make/target/product/media_product.mk
+# adds, so external/chromium-webview stays in the tree but installs nothing.
+#
+# No config_webview_packages.xml overlay: Cromite keeps the AOSP package name
+# com.android.webview, and vendor/voltage/overlay/common already overlays that
+# file with an entry for it (description "AOSP WebView", availableByDefault,
+# isFallback, no <signature>). A BestROM copy could not win anyway - the aapt2
+# overlay order is the PRODUCT_PACKAGE_OVERLAYS order and the first root wins,
+# and a product makefile's own additions always flatten after the ones it
+# inherits, so vendor/bestrom/overlay/common cannot outrank
+# vendor/voltage/overlay/common for a file both of them carry.
+PRODUCT_PACKAGES += \
+    CromiteWebView
+
 # Keyboard is on the hot path of every text field; compile it speed like the launcher/SystemUI.
 PRODUCT_DEXPREOPT_SPEED_APPS += \
     LatinIME

@@ -1,0 +1,17 @@
+# Git LFS for prebuilt APKs that git cannot carry.
+#
+# GitHub refuses any single file over 100 MB on push, and Cromite's
+# SystemWebView is 297 MB, so it cannot live in this repository's object
+# database at all. Through LFS the history carries a ~130-byte pointer, which
+# also means a later decision to move the WebView into its own project (the way
+# AOSP keeps external/chromium-webview's prebuilt in a separate LFS repository)
+# costs a delete rather than a history rewrite.
+#
+# Only the WebView is listed. LeanType.apk (12.6 MB) and Via.apk (8.4 MB) are
+# ordinary blobs; keeping them out of LFS keeps them out of the LFS bandwidth
+# quota that every clone spends.
+#
+# git-lfs must be installed before "repo sync", or the checkout leaves the
+# pointer file in place of the APK and the build fails on an APK that is not a
+# zip.
+prebuilt/CromiteWebView/*.apk filter=lfs diff=lfs merge=lfs -text
