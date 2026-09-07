@@ -12,6 +12,17 @@ breaks the build: two `PRODUCT_COPY_FILES` writing the same
 wins nondeterministically, and a competing `kernel.mk` fights VoltageOS's
 `BoardConfigKernel.mk` chain.
 
+## Getting the source
+
+```
+repo init -u https://github.com/Mohithash/manifest -b 17 --git-lfs
+repo sync -c -j$(nproc) --no-clone-bundle
+. build/envsetup.sh && lunch bestrom_peridot-cp2a-user && mka bestrom
+```
+
+Every BestROM project lives under `github.com/Mohithash/<path_with_underscores>`
+on branch `17`; the manifest is VoltageOS 17 plus `snippets/bestrom.xml`.
+
 ## Contents
 
 | Path | Purpose |
