@@ -83,6 +83,21 @@ Keyboard
     dictionary data and LeanType's is code that peridot AOT-compiles
     whole. Together with the WebView, /product grows about 69 MB.
 
+Files
+  * MiXplorer 6.71.15 (com.mixplorer) is preloaded alongside Via as a
+    normal, removable user app, installed once on first boot from
+    /product/etc/bestrom/preinstall. It is the author's own arm64 build,
+    shipped unmodified and with his signature intact, as his terms for
+    preinstalling it in a ROM require. Grant it All files access on first
+    run; it asks for no camera, location, microphone or contacts
+    permission. Archive formats past ZIP need his separate MiX Archive
+    add-on, which is not bundled. Adds 5.3 MB to /product.
+  * A preload that fails to install because the device is out of space,
+    or because the first boot was cut short, is now retried on the next
+    boot instead of being written off. One that fails for a reason a
+    retry cannot fix is still only attempted once, and uninstalling a
+    preload still keeps it uninstalled.
+
 
 BestROM 3.0 for POCO F6 (peridot)
 =================================

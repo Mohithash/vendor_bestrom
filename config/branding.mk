@@ -170,5 +170,11 @@ PRODUCT_PACKAGES += \
 # Removable preloads: installed once on first boot by BestromPreinstaller as
 # ordinary user apps, so users can uninstall them. Via Browser 7.3.3
 # (mark.via.gp, https://viayoo.com, sha256 245e02eb1106dfd4d97d27f5bb68e97a2db9fe543f72ab93dc6b587b0e2da4fd).
+# MiXplorer 6.71.15 (com.mixplorer, https://mixplorer.com, arm64 split, sha256
+# bc2627659872cfc9895155d129c03eb8ac2b3c112cbdbe7303feb718f10c83f0). Copied
+# verbatim and never re-signed: the author permits ROMs to preinstall MiXplorer
+# but not to ship a modified or differently signed APK. See
+# vendor/bestrom/prebuilt/preinstall/README.md.
 PRODUCT_COPY_FILES += \
-    vendor/bestrom/prebuilt/preinstall/Via.apk:$(TARGET_COPY_OUT_PRODUCT)/etc/bestrom/preinstall/Via.apk
+    vendor/bestrom/prebuilt/preinstall/Via.apk:$(TARGET_COPY_OUT_PRODUCT)/etc/bestrom/preinstall/Via.apk \
+    vendor/bestrom/prebuilt/preinstall/MiXplorer.apk:$(TARGET_COPY_OUT_PRODUCT)/etc/bestrom/preinstall/MiXplorer.apk

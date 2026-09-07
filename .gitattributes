@@ -7,9 +7,9 @@
 # AOSP keeps external/chromium-webview's prebuilt in a separate LFS repository)
 # costs a delete rather than a history rewrite.
 #
-# Only the WebView is listed. LeanType.apk (12.6 MB) and Via.apk (8.4 MB) are
-# ordinary blobs; keeping them out of LFS keeps them out of the LFS bandwidth
-# quota that every clone spends.
+# Only the WebView is listed. LeanType.apk (12.5 MB), Via.apk (4.1 MB) and
+# MiXplorer.apk (5.3 MB) are ordinary blobs; keeping them out of LFS keeps them
+# out of the LFS bandwidth quota that every clone spends.
 #
 # git-lfs must be installed before "repo sync", or the checkout leaves the
 # pointer file in place of the APK and the build fails on an APK that is not a
