@@ -1,0 +1,49 @@
+Third-party software preinstalled by BestROM
+============================================
+
+The APKs in this directory are not BestROM's work and are not open source.
+They are copied into the image byte for byte and installed on first boot as
+ordinary, removable user apps. Each is redistributed under the permission its
+author gives for preinstalling it in a ROM; that permission is the only thing
+that makes the preload lawful, so it is recorded here rather than only in a
+commit message.
+
+Neither app is covered by the generated NOTICE for the image: PRODUCT_COPY_FILES
+attaches no Soong license metadata. This file is the attribution.
+
+
+MiXplorer
+---------
+
+MiXplorer, Copyright (c) Hootan Parsa (MiProjects), https://mixplorer.com
+
+Proprietary freeware. No source is published. Distributed by the author from
+his own Google Drive, linked from mixplorer.com and from the XDA thread
+https://xdaforums.com/t/app-2-3-mixplorer-v6-x-released-fully-featured-file-manager.1523691/
+
+The author's grant, as quoted from that thread in IzzyOnDroid repository issue
+44 (https://gitlab.com/IzzyOnDroid/repo/-/issues/44):
+
+    All developers and companies are allowed to add MiXplorer and its free
+    addons in their ROMs as pre-installed apps. Sharing the modified APK file
+    and with different signature is not permitted.
+
+Second-hand quote, not read at the primary source: the XDA post and
+mixplorer.com/legal/ both refuse automated requests from this build host. See
+README.md; archiving the original post is a release task.
+
+BestROM therefore ships the author's own signed APK unmodified, and never
+repacks, re-zipaligns or re-signs it.
+
+
+Via Browser
+-----------
+
+Via Browser, Copyright (c) Various Tu, https://viayoo.com
+
+Proprietary freeware. No source is published. Redistributed as the author's
+own signed APK, unmodified.
+
+No written grant for preinstalling Via in a ROM is recorded in this tree - it
+was added before this file existed. Getting one, or dropping the preload, is an
+open item; it is not settled by the fact that the app is free of charge.

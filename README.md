@@ -40,6 +40,7 @@ Their corresponding source:
 | `overlay/common/…/SetupWizard` | Rebrands the only setup wizard in the tree |
 | `overlay/common/…/Updater` | Repoints OTA at `Mohithash/bestrom_ota` |
 | `bootanimation/generate.py` | Generator for a real BestROM animation; not wired up yet |
+| `prebuilt/preinstall/` | Removable preloads (Via, MiXplorer) — copied to `/product`, installed on first boot by `BestromPreinstaller`. See [its README](prebuilt/preinstall/README.md) |
 | `tools/AGENTS.md` | Agent instructions for the whole tree; copied to the tree root by `<copyfile>` |
 | `tools/mcp/` | The BestROM MCP server: build, verify, device and release tools for AI agents |
 
