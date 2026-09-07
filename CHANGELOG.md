@@ -8,6 +8,26 @@ Camera
   * Both peridot-miuicamera projects are back in the manifest: the device
     add-on (peridot-dev, lineage-23.2) and the blobs (NoPrincessHere,
     sixteen-qpr2), with the device.mk inherit and the BoardConfig -include.
+  * Fixed: photos taken with MiuiCamera did not appear in the gallery. The
+    MediaStore row was inserted at capture time and left pending, and the JPEG
+    was only written at the next camera launch, from the thumbnail. On A17 a
+    platform-signed app targeting SDK 35 runs as platform_app_36, so every
+    sepolicy rule the MiuiCamera add-on writes against the bare platform_app
+    type was dead - including the one that lets the app hand the camera HAL its
+    BGService callback. Without binder "transfer" that registration died and
+    MIVI post-processing never reported back, so every shot timed out at 24 s.
+  * Also fixed alongside it: the camera provider's denied read of the kgsl
+    devfreq symlink, its denied set of the persist.vendor.aiie_* properties, a
+    noisy QSPM HIDL probe, and the vendor camera/display/audio property and
+    /proc/pressure reads MiuiCamera does at launch.
+
+Privacy
+  * MiuiCamera now ships with INTERNET revoked. It runs Firebase Crashlytics
+    and uploads to firebaselogging-pa.googleapis.com, fetches cloud config and
+    watermarks from Xiaomi CDNs, and pings baidu.com for the time - none of it
+    needed to take a photo. Grant it back in Datura if you want those.
+    NOTE: this only applies on a clean flash or a new user/work profile. If you
+    dirty-flash over an existing install, revoke it once in Datura by hand.
 
 
 BestROM 3.0 for POCO F6 (peridot)
