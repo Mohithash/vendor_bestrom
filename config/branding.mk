@@ -139,6 +139,15 @@ PRODUCT_PACKAGES += \
 # and a product makefile's own additions always flatten after the ones it
 # inherits, so vendor/bestrom/overlay/common cannot outrank
 # vendor/voltage/overlay/common for a file both of them carry.
+#
+# The APK is not in git - it is 297 MB, which GitHub will not take and which
+# Git LFS would only turn into a monthly bandwidth quota that every clone
+# spends. tools/fetch-prebuilts.sh downloads it and checks its digest against
+# GitHub's release attestation. Fail here rather than several minutes into
+# Soong on an "apk: missing dependency" that says nothing about the cause.
+$(if $(wildcard vendor/bestrom/prebuilt/CromiteWebView/CromiteWebView.apk),,\
+    $(error CromiteWebView.apk missing: run vendor/bestrom/tools/fetch-prebuilts.sh))
+
 PRODUCT_PACKAGES += \
     CromiteWebView
 

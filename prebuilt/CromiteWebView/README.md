@@ -80,8 +80,11 @@ BestROM release:
    `633fa41d...`. A changed key is a stop, not a note.
 4. Refresh `LICENSE` from that tag and `LICENSE.chromium` from the matching
    Chromium tag.
-5. Move the APK and this file's version table, sha256 and tag together, and
-   re-check the size line in `vendor/bestrom/CHANGELOG.md`.
+5. Move the `PREBUILTS` entry in `vendor/bestrom/tools/fetch-prebuilts.sh`,
+   `CromiteWebView.apk.sha256` and this file's version table, sha256 and tag
+   together, and re-check the size line in `vendor/bestrom/CHANGELOG.md`.
+   Then delete the local APK and re-run the script, so the new URL, size and
+   digest are proven before anyone else syncs.
 
 ## Network behaviour
 
@@ -134,12 +137,27 @@ provider from `ApplicationInfo` instead (`WebViewAppPicker.loadLabel`). The four
 Google WebView entries Voltage lists stay in the config and stay unresolved,
 which is what already happens today.
 
-## Git LFS
+## Fetching
 
-`CromiteWebView.apk` is tracked through Git LFS (`vendor/bestrom/.gitattributes`),
-because GitHub refuses any single file over 100 MB on push and because a 297 MB
-blob in this repository's history could not be removed later without rewriting
-it. The pointer's `oid` is the APK's sha256, so what git tracks is the attested
-digest above. **git-lfs must be installed before `repo sync`** - without it
-the checkout leaves a ~130-byte pointer file in place of the APK and the build
-fails on an APK that is not a zip.
+`CromiteWebView.apk` is **not in git**. It is 297 MB: GitHub refuses any single
+file over 100 MB on push, and Git LFS only moves the problem, because a free
+account gets 1 GB of LFS bandwidth a month and a 297 MB object exhausts it in
+three clones - after which `repo sync` fails for everyone, not just the
+maintainer.
+
+The APK is downloaded instead, by
+
+    vendor/bestrom/tools/fetch-prebuilts.sh
+
+which checks the size, the sha256 in `CromiteWebView.apk.sha256` and the
+attestation call above before it moves the file into place, and leaves nothing
+behind if any of the three fails. It is idempotent and costs no network once
+the file is there, so `build-bestrom-run.sh` runs it before every build.
+`config/branding.mk` hard-errors if the APK is still missing.
+
+Set `BESTROM_SKIP_ATTESTATION=1` to build without reaching api.github.com. The
+size and digest are still enforced; only the provenance check is dropped.
+
+When taking a newer release, update the URL, sha256 and size in the
+`PREBUILTS` table of that script together with the version table above and
+`CromiteWebView.apk.sha256`.

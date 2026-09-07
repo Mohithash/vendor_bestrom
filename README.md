@@ -15,10 +15,16 @@ wins nondeterministically, and a competing `kernel.mk` fights VoltageOS's
 ## Getting the source
 
 ```
-repo init -u https://github.com/Mohithash/manifest -b 17 --git-lfs
+repo init -u https://github.com/Mohithash/manifest -b 17
 repo sync -c -j$(nproc) --no-clone-bundle
+vendor/bestrom/tools/fetch-prebuilts.sh
 . build/envsetup.sh && lunch bestrom_peridot-cp2a-user && mka bestrom
 ```
+
+`fetch-prebuilts.sh` downloads the prebuilts that are too large for git - today
+only Cromite's 297 MB SystemWebView - and verifies each one against a recorded
+size, sha256 and GitHub release attestation. It is idempotent, and
+`build-bestrom-run.sh` runs it for you; the build hard-errors without it.
 
 Every BestROM project lives under `github.com/Mohithash/<path_with_underscores>`
 on branch `17`; the manifest is VoltageOS 17 plus `snippets/bestrom.xml`.

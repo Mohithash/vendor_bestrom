@@ -140,6 +140,19 @@ def env_check(cfg: Config) -> EnvReport:
     systemd_ok = jobs.systemd_user_ok()
     listener, _owner = port_listener(cfg.device.adb_port)
 
+    # Prebuilts that are fetched rather than committed. Not a blocker: the
+    # build wrapper runs tools/fetch-prebuilts.sh before lunch, so a missing
+    # file is a warning here and an error only if the fetch itself failed.
+    warnings: list[str] = []
+    webview = root / "vendor" / "bestrom" / "prebuilt" / "CromiteWebView" / "CromiteWebView.apk"
+    prebuilts_present = webview.is_file()
+    if not prebuilts_present:
+        warnings.append(
+            "vendor/bestrom/prebuilt/CromiteWebView/CromiteWebView.apk is missing; "
+            "config/branding.mk hard-errors without it. build-bestrom-run.sh fetches "
+            "it, or run vendor/bestrom/tools/fetch-prebuilts.sh by hand."
+        )
+
     if not root.is_dir():
         blockers.append(f"tree root {root} does not exist")
     if not envsetup:
@@ -173,5 +186,7 @@ def env_check(cfg: Config) -> EnvReport:
         systemd_user_ok=systemd_ok,
         build_in_flight=in_flight,
         adb_port_listener=listener,
+        prebuilts_present=prebuilts_present,
         blockers=blockers,
+        warnings=warnings,
     )

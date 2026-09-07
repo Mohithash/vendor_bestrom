@@ -1,1 +1,4 @@
 bootanimation/gen/
+
+# Fetched by tools/fetch-prebuilts.sh, never committed - see .gitattributes.
+prebuilt/CromiteWebView/CromiteWebView.apk

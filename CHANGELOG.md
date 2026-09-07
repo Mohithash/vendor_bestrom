@@ -51,10 +51,12 @@ WebView
     binds to that tag of uazo/cromite, so the shipped bytes can be
     checked against something other than themselves. Its signer,
     CN=CromiteOrg, still cannot be - Cromite publishes no fingerprint.
-  * /product grows about 33 MB for it. The 297 MB APK is tracked with
-    Git LFS, because GitHub refuses a file that size: git-lfs has to be
-    installed before repo sync, or the checkout leaves a pointer file
-    where the APK should be.
+  * /product grows about 33 MB for it. The 297 MB APK is not in git -
+    GitHub refuses a file that size and Git LFS would spend the whole
+    monthly bandwidth quota in three clones. It is downloaded by
+    vendor/bestrom/tools/fetch-prebuilts.sh, which checks its size,
+    sha256 and release attestation; the build wrapper runs that script
+    and the build stops early if the APK is missing.
 
 Keyboard
   * LeanType 4.2.0 (com.leanbitlab.leantype), LeanBit Lab's HeliBoard
