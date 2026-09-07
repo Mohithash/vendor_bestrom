@@ -18,7 +18,11 @@
        why the older branches (16/16.2/17/bestrom-a17/main) cannot be used here. -->
   <project name="Mohithash/android_vendor_bestrom"
            path="vendor/bestrom"
-           remote="gh" revision="voltage-17" />
+           remote="gh" revision="voltage-17" >
+    <copyfile src="tools/AGENTS.md" dest="AGENTS.md" />
+    <copyfile src="tools/CLAUDE.md" dest="CLAUDE.md" />
+    <copyfile src="tools/mcp.json" dest=".mcp.json" />
+  </project>
 
   <!-- PrivacyKit-Native. Three VoltageOS repos are replaced by BestROM forks
        carrying the PrivacyKit patches, rebased from the A16 patch set. Each
