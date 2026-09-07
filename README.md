@@ -34,7 +34,7 @@ Their corresponding source:
 
 | Prebuilt | Source |
 |---|---|
-| `prebuilt/LeanType/LeanType.apk` (GPL-3.0) | https://github.com/Mohithash/LeanType branch `bestrom-17` — upstream `LeanBitLab/LeanType` tag `v4.2.0` plus one commit, also kept in `prebuilt/LeanType/patches/`. See [its README](prebuilt/LeanType/README.md) |
+| `prebuilt/LeanType/LeanType.apk` (GPL-3.0) | https://github.com/Mohithash/LeanType branch `bestrom-17` — upstream `LeanBitLab/LeanType` tag `v4.2.0` plus one commit, also kept in `prebuilt/LeanType/patches/`. **Not pushed yet: that URL 404s, and it must resolve before any public build or OTA carries the keyboard.** See [its README](prebuilt/LeanType/README.md) |
 | `prebuilt/CromiteWebView/CromiteWebView.apk` (GPL-3.0 + Chromium BSD) | https://github.com/uazo/cromite at tag `v148.0.7778.168-cb3baf14f52eb4365d017f640f85310735c19b79`, the release asset unmodified. See [its README](prebuilt/CromiteWebView/README.md) |
 
 ## Contents

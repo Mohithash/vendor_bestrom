@@ -172,9 +172,11 @@ PRODUCT_PACKAGES += \
 #
 # The size is real either way, and it is the largest line item in this swap.
 # LatinIME's bulk was dictionary assets and it compiled to a 2.3 MB odex;
-# LeanType's bulk is code and compiles to 32 MB of odex plus 19 MB of vdex -
-# 64 MB installed against LatinIME's 22 MB. Recovering it means changing the
-# device-wide compiler filter, which is every app's decision, not this one's.
+# LeanType's bulk is code. Measured on the module's own output: a 24,548,742 B
+# APK (Soong uncompresses classes*.dex for dexpreopt), a 32,513,752 B odex and
+# a 485,168 B vdex - 57,547,662 B installed, about +35 MB against LatinIME's
+# 22 MB. Recovering it means changing the device-wide compiler filter, which is
+# every app's decision, not this one's.
 
 # Removable preloads: installed once on first boot by BestromPreinstaller as
 # ordinary user apps, so users can uninstall them. Via Browser 7.3.3

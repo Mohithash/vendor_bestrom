@@ -31,20 +31,41 @@ The binary is built from https://github.com/Mohithash/LeanType branch
 That branch is `LeanBitLab/LeanType` tag `v4.2.0` plus the single commit below;
 `LICENSE` is the upstream text at that tag.
 
-That branch does not have to be reachable for the offer to hold: the same commit
-is kept here as
+The same commit is also kept here as
 `patches/0001-Default-to-100-keyboard-height-and-width.patch`, so upstream tag
 `v4.2.0` (`1383390cb9c48b859f56b6499210cbccbd91996f`) plus that one patch
-reproduces the shipped source exactly.
+reproduces the shipped source exactly:
 
     git clone https://github.com/LeanBitLab/LeanType -b v4.2.0 LeanType
     git -C LeanType am < patches/0001-Default-to-100-keyboard-height-and-width.patch
 
-> **Release gate.** GPL-3.0 section 6 requires the offer above to resolve for
-> anyone who receives an image carrying this APK. `Mohithash/LeanType` must
-> exist and carry branch `bestrom-17` **before** an OTA or a public build ships
-> the keyboard; check with
-> `curl -sI https://github.com/Mohithash/LeanType/tree/bestrom-17 | head -1`.
+> **Release gate, not yet met.** `https://github.com/Mohithash/LeanType` returns
+> **404** today (checked 2026-09-07); the fork exists only as a local clone with
+> no remote pointing at it. Until it is pushed, the offer this file and
+> `vendor/bestrom/README.md` both make is false, and no OTA or public build may
+> carry the keyboard.
+>
+> The patch above does not substitute for it. GPL-3.0 section 6 obliges whoever
+> conveys the binary to convey the corresponding source or a written offer that
+> resolves; someone who receives an OTA gets neither `vendor/bestrom` nor the
+> patch file, and pointing them at a third party's repository is not the same
+> thing as the offer being good.
+>
+> Two steps, both the maintainer's - agents do not push:
+>
+>     git -C <LeanType fork clone> push \
+>         https://github.com/Mohithash/LeanType bestrom-17:refs/heads/bestrom-17
+>     curl -sI https://github.com/Mohithash/LeanType/tree/bestrom-17 | head -1
+>
+> The GitHub repository may need creating first (fork `LeanBitLab/LeanType`, or
+> `gh repo create Mohithash/LeanType --public`). The fork commit carries no
+> trailers and is clean to publish as it stands.
+>
+> One more thing the push does not cover: the person who receives the image
+> never reads this file. The same URL belongs somewhere they can reach it - an
+> About or Legal source-offer string, or the OTA release notes. The generated
+> NOTICE will carry the GPL-3.0 licence text, and a licence text is not an offer
+> of source.
 
 ## Fork
 
@@ -75,6 +96,22 @@ to 205.6dp, still under the 46%p (415dp) `config_max_keyboard_height` clamp, and
 from 97.6% to 100% of the screen width. Landscape barely moves: `values-land`
 sets `config_min_keyboard_height` to 45%p (~183dp), above the 176dp base, so the
 0.45f landscape default was mostly being clamped away already.
+
+### Loose ends in the fork
+
+Two, both deliberately left for the next fork bump rather than fixed with a
+rebuild of a verified binary:
+
+* The first-run wizard now argues with itself. `WelcomeWizard.kt:613` is a
+  hardcoded English string reading "Adjust the height of the keyboard.
+  Recommended: 77% for more square keys, 100% for taller keys.", above a slider
+  that opens at the new 100% default. Drop the recommendation clause - the step
+  is a slider, it does not need one - in the same commit that gets pushed for
+  the source offer.
+* Landscape height goes 0.45f -> 1.0f, and no one has looked at it on a screen.
+  The clamp argument above is reasoning, not a measurement. If a landscape
+  screenshot shows the text field crowded out, split the default back to
+  `arrayOf(1.0f, 0.45f)`: portrait is what was actually asked for.
 
 ### Building it
 
@@ -173,6 +210,16 @@ dictionary assets and compiled to a 2.3 MB odex; LeanType's is mostly code.
 This is the largest single line item in the WebView-plus-keyboard swap and it
 belongs in the release notes.
 
+About 832 KB of that is dead weight: the APK carries a full `armeabi-v7a` slice
+(`libjni_latinime.so` 801,488 B, `libimage_processing_util_jni.so` 20,380 B,
+`libandroidx.graphics.path.so` 7,224 B, `libsurface_util_jni.so` 3,440 B) that
+peridot can never load - the product inherits `core_64_bit_only.mk`, so
+`Build.SUPPORTED_ABIS` is `arm64-v8a` alone and `NativeLibraryHelper` always
+picks the 64-bit slice. It is carried twice, in `/product` and in the OTA
+payload. Not a correctness problem, and not worth a rebuild on its own; fix it
+on the next fork bump by adding `ndk { abiFilters += "arm64-v8a" }` to
+`app/build.gradle.kts`, or an ABI split that keeps only `arm64-v8a`.
+
 The installed APK is twice the size of the one committed here because Soong
 uncompresses `classes*.dex` for dexpreopt. That trade is worth ~6.5 MB: the
 vdex no longer has to carry ART's own copy of the dex (18,912,216 B when the
@@ -195,12 +242,17 @@ The `standard` flavor, not `standardfull` or `offline`.
 system keyboard that can side-load packages, updating itself outside the OTA,
 is the wrong shape for a ROM.
 
-`offline` drops `INTERNET` entirely, which is the stronger privacy story, but it
-is a different package name (`com.leanbitlab.leantype.offline`), so it is not
-what F-Droid publishes and its signer cannot be matched against a published
-index; its five plugins also have to be side-loaded by hand. Worth revisiting
-now that the fork build has given up the F-Droid update path anyway - the
-`Defaults.kt` change applies to that flavor unchanged.
+`offline` drops `INTERNET` entirely, which is the stronger privacy story. It was
+rejected for being a different package name
+(`com.leanbitlab.leantype.offline`), so not what F-Droid publishes and not
+matchable against a published index - but **that reason is void now**: the fork
+build is signed with the ROM key, so the F-Droid path is gone either way. What
+remains against `offline` is that its five plugins must be side-loaded by hand
+and that dictionaries cannot be downloaded in-app, only imported. The
+`Defaults.kt` change applies to it unchanged, so switching is a one-line change
+to [Building it](#building-it) plus a rebuild. Decide it deliberately rather
+than by inheritance; on the permission table above, `offline` removes the entire
+first row and everything that depends on it.
 
 No flavor bundles a cloud AI key. Cloud proofreading in `standard` is opt-in and
 requires the user to paste their own key.
@@ -223,14 +275,46 @@ to install what it downloads. From the shipped dex:
 * Five more `https://api.github.com/repos/LeanBitLab/*-Plugin/releases/latest`
   calls sit in the plugin preference screens.
 
+The updater is not the whole destination list. Everything else the shipped dex
+can reach, and what triggers it:
+
+* `https://generativelanguage.googleapis.com` (models `gemini-2.5-flash`,
+  `gemini-2.5-pro`) and a Groq or OpenAI-compatible endpoint, for the optional
+  "smart proofreading and rewriting" feature. `https://console.groq.com/keys`
+  and `https://aistudio.google.com/app/apikey` appear only as links to the pages
+  where a user gets a key.
+* `https://huggingface.co/ggerganov/whisper.cpp` - `ggml-tiny-q5_1.bin`,
+  `ggml-base-q5_1.bin`, `ggml-small-q5_1.bin`, downloaded if the user turns on
+  on-device voice input.
+* `https://dl.google.com/handwriting/models/*.fst.zip` and
+  `https://dl.google.com/translate/offline/*`, per-language handwriting and
+  offline translation packs.
+* `https://codeberg.org/Helium314/aosp-dictionaries` - dictionary and emoji
+  data the user picks per language.
+
+**No credential is bundled.** `strings` over both `classes*.dex` for `AIza`,
+`gsk_`, `hf_` and `sk-` literals returns nothing, so the cloud AI path cannot
+fire until the user pastes a key of their own; the same check is worth repeating
+on every version bump.
+
 What matters for a system keyboard is where those fire, and the answer is good:
-nothing runs at boot or when the keyboard starts. `pref_auto_check_updates` is
-read in exactly one settings composable, WorkManager is present only as
+no request originates at boot or when the keyboard starts. `pref_auto_check_updates`
+is read in exactly one settings composable, WorkManager is present only as
 `PluginWorkerFactory` for plugin downloads, and there are no Firebase, GMS or
 analytics SDK classes at all (`com.google.firebase` appears only as an okhttp
 platform-detection string; `CrashReportExceptionHandler` writes a local
 `crash_reports.zip` with no upload endpoint). Every request needs the user to
 open a settings screen first.
+
+Two receivers do register for `BOOT_COMPLETED`, so "nothing runs at boot" would
+be too strong:
+
+* `helium314.keyboard.latin.SystemBroadcastReceiver` - toggles the
+  `SettingsActivity` component and re-initialises dictionaries. No network.
+* `androidx.work.impl.background.systemalarm.RescheduleReceiver` - WorkManager's
+  own, and it ships `android:enabled="false"`; WorkManager enables it only while
+  work is pending. If a user starts a plugin download and reboots before it
+  finishes, that download resumes at boot. Nothing else uses WorkManager.
 
 Consequence of shipping `standard` on a system partition: the in-app update it
 offers cannot complete, because without `REQUEST_INSTALL_PACKAGES` the install
@@ -240,6 +324,29 @@ F-Droid or GitHub install would be refused for a signature mismatch as well, so
 **the OTA is the only update channel for this keyboard** (see "What this
 costs"). The in-app updater is a dead end either way; it is also inert unless
 the user opens the Updates settings screen.
+
+## Permissions
+
+The default keyboard sees every keystroke on the device, so its permission set
+belongs in writing. From `aapt2 dump permissions` on the shipped APK:
+
+| Permission | What wants it |
+| --- | --- |
+| `INTERNET`, `ACCESS_NETWORK_STATE` | the destinations above - updater, dictionaries, models, optional cloud AI |
+| `RECORD_AUDIO`, `MODIFY_AUDIO_SETTINGS` | voice input (whisper.cpp on device) |
+| `CAMERA`, `READ_MEDIA_IMAGES`, `READ_EXTERNAL_STORAGE` (maxSdk 32) | custom keyboard background image, and the image picker for it |
+| `READ_CONTACTS` | suggesting contact names while typing |
+| `READ_USER_DICTIONARY`, `WRITE_USER_DICTIONARY` | the personal dictionary, shared with the framework |
+| `VIBRATE` | key press haptics |
+| `SYSTEM_ALERT_WINDOW` | the resize/one-handed overlay |
+| `RECEIVE_BOOT_COMPLETED` | the two receivers described above |
+| `WAKE_LOCK`, `FOREGROUND_SERVICE` | WorkManager, i.e. plugin downloads |
+
+All of them are runtime or special permissions: the app is not privileged, so
+camera, microphone, contacts and images stay denied until the user grants them
+in the feature that needs them, and a user who never opens voice input or a
+custom background never grants them at all. `REQUEST_INSTALL_PACKAGES` is the
+one it deliberately does **not** have; see [Variant](#variant).
 
 ## Default IME selection
 

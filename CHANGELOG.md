@@ -80,6 +80,13 @@ Keyboard
     keyboard the user chose is never overridden.
   * It brings its own spell checker, so the Settings spell-checker row
     stays populated.
+  * The keyboard is not a privileged app and asks for camera,
+    microphone, contacts and image access only where a feature needs
+    them - voice input, a custom background, contact suggestions - so
+    nothing is granted until the user uses that feature. Its optional
+    cloud proofreading carries no API key and does nothing until a user
+    pastes one of their own; the models, dictionaries and handwriting
+    packs it can download are all started from a settings screen.
   * The keyboard is the largest line item in the size delta: 57 MB
     installed against LatinIME's 22 MB, because LatinIME's bulk was
     dictionary data and LeanType's is code that peridot AOT-compiles
