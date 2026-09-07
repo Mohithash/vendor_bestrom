@@ -30,6 +30,50 @@ Camera
     noisy QSPM HIDL probe, and the vendor camera/display/audio property and
     /proc/pressure reads MiuiCamera does at launch.
 
+WebView
+  * The system WebView is Cromite's SystemWebView build
+    (com.android.webview 148.0.7778.168) instead of the AOSP Chromium
+    prebuilt. It keeps the AOSP package name, so nothing else in the
+    image changes; the AOSP module is dropped by the prebuilt's
+    overrides.
+  * Cromite's binary has no variations-seed, metrics-upload or
+    component-updater endpoints in it, so the WebView services that
+    would talk to Google do nothing. The same removal has a cost:
+    WebView no longer receives CRLSet certificate-revocation updates
+    between ROM releases.
+  * The other cost, stated plainly because it is the trade being made:
+    Cromite's WebView asset is four Chrome majors behind the prebuilt it
+    replaces - 148.0.7778.168 from 2026-05-21 against 152.0.7977.64 -
+    and that asset comes from a CI workflow that lags Cromite's own
+    browser releases. Check for a newer one before every release; the
+    procedure is in vendor/bestrom/prebuilt/CromiteWebView/README.md.
+  * The APK's sha256 is the digest GitHub's signed release attestation
+    binds to that tag of uazo/cromite, so the shipped bytes can be
+    checked against something other than themselves. Its signer,
+    CN=CromiteOrg, still cannot be - Cromite publishes no fingerprint.
+  * /product grows about 33 MB for it. The 297 MB APK is tracked with
+    Git LFS, because GitHub refuses a file that size: git-lfs has to be
+    installed before repo sync, or the checkout leaves a pointer file
+    where the APK should be.
+
+Keyboard
+  * LeanType 4.2.0 (com.leanbitlab.leantype), LeanBit Lab's HeliBoard
+    fork, replaces AOSP LatinIME. It ships with its upstream signature
+    intact and F-Droid publishes the same signing key, so an update from
+    F-Droid installs over the system copy. The in-app updater it carries
+    cannot install anything on a system build, by design.
+  * LeanType publishes no locale-tagged subtypes, so with LatinIME gone
+    the framework selects no keyboard at all. BestromPreinstaller now
+    seeds the enabled and default input method from its boot receiver
+    when nothing is selected, so the setup wizard has a keyboard; a
+    keyboard the user chose is never overridden.
+  * It brings its own spell checker, so the Settings spell-checker row
+    stays populated.
+  * The keyboard is the largest line item in the size delta: 64 MB
+    installed against LatinIME's 22 MB, because LatinIME's bulk was
+    dictionary data and LeanType's is code that peridot AOT-compiles
+    whole. Together with the WebView, /product grows about 75 MB.
+
 
 BestROM 3.0 for POCO F6 (peridot)
 =================================
