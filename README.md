@@ -23,6 +23,14 @@ repo sync -c -j$(nproc) --no-clone-bundle
 Every BestROM project lives under `github.com/Mohithash/<path_with_underscores>`
 on branch `17`; the manifest is VoltageOS 17 plus `snippets/bestrom.xml`.
 
+Two shipped binaries are built outside that namespace and outside the manifest.
+Their corresponding source:
+
+| Prebuilt | Source |
+|---|---|
+| `prebuilt/LeanType/LeanType.apk` (GPL-3.0) | https://github.com/Mohithash/LeanType branch `bestrom-17` — upstream `LeanBitLab/LeanType` tag `v4.2.0` plus one commit, also kept in `prebuilt/LeanType/patches/`. See [its README](prebuilt/LeanType/README.md) |
+| `prebuilt/CromiteWebView/CromiteWebView.apk` (GPL-3.0 + Chromium BSD) | https://github.com/uazo/cromite at tag `v148.0.7778.168-cb3baf14f52eb4365d017f640f85310735c19b79`, the release asset unmodified. See [its README](prebuilt/CromiteWebView/README.md) |
+
 ## Contents
 
 | Path | Purpose |

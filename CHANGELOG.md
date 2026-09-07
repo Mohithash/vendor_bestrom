@@ -58,10 +58,19 @@ WebView
 
 Keyboard
   * LeanType 4.2.0 (com.leanbitlab.leantype), LeanBit Lab's HeliBoard
-    fork, replaces AOSP LatinIME. It ships with its upstream signature
-    intact and F-Droid publishes the same signing key, so an update from
-    F-Droid installs over the system copy. The in-app updater it carries
-    cannot install anything on a system build, by design.
+    fork, replaces AOSP LatinIME.
+  * The keyboard now opens at full size. Upstream defaults to 77% height
+    and 15% side padding; BestROM builds it from a one-commit fork that
+    defaults both to 100%. The Appearance sliders still work and anyone
+    who has already moved either one keeps their setting.
+  * Because that is a fork build, it is signed with the ROM key rather
+    than LeanBit Lab's, so the keyboard updates by OTA only - an F-Droid
+    or GitHub install is refused for a signature mismatch. Its own in-app
+    updater cannot install anything on a system build either, by design.
+  * LeanType is GPL-3.0. The source for the build that ships is
+    github.com/Mohithash/LeanType branch bestrom-17 - upstream tag v4.2.0
+    plus the one commit, which is also kept in the ROM tree at
+    vendor/bestrom/prebuilt/LeanType/patches/.
   * LeanType publishes no locale-tagged subtypes, so with LatinIME gone
     the framework selects no keyboard at all. BestromPreinstaller now
     seeds the enabled and default input method from its boot receiver
@@ -69,10 +78,10 @@ Keyboard
     keyboard the user chose is never overridden.
   * It brings its own spell checker, so the Settings spell-checker row
     stays populated.
-  * The keyboard is the largest line item in the size delta: 64 MB
+  * The keyboard is the largest line item in the size delta: 57 MB
     installed against LatinIME's 22 MB, because LatinIME's bulk was
     dictionary data and LeanType's is code that peridot AOT-compiles
-    whole. Together with the WebView, /product grows about 75 MB.
+    whole. Together with the WebView, /product grows about 69 MB.
 
 
 BestROM 3.0 for POCO F6 (peridot)
