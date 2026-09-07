@@ -184,6 +184,23 @@ PRODUCT_PACKAGES += \
 # verbatim and never re-signed: the author permits ROMs to preinstall MiXplorer
 # but not to ship a modified or differently signed APK. See
 # vendor/bestrom/prebuilt/preinstall/README.md.
+#
+# RELEASE SIGNING. Every release-signing run over a target-files zip carrying
+# these two APKs must be given
+#
+#     --skip_apks_with_path_prefix PRODUCT/etc/bestrom/preinstall/
+#
+# and it is not optional. sign_target_files_apks decides what is an APK by file
+# extension anywhere in the zip (GetApkFileInfo), but META/apkcerts.txt is
+# generated only from $(PACKAGES) - module names - so a PRODUCT_COPY_FILES entry
+# never gets a line in it and the run dies on
+# "No key specified for: MiXplorer.apk, Via.apk". The skip prefix drops both out
+# of that check and copies them into the signed target-files byte for byte,
+# which is what MiXplorer's terms require anyway. Do NOT answer the assertion by
+# adding them to apkcerts with the release key: that re-signs MiXplorer with a
+# different signature, exactly what the author forbids. -e MiXplorer.apk= -e
+# Via.apk= (empty value, meaning do not sign) works too, but the prefix keeps
+# covering the next APK dropped in this directory.
 PRODUCT_COPY_FILES += \
     vendor/bestrom/prebuilt/preinstall/Via.apk:$(TARGET_COPY_OUT_PRODUCT)/etc/bestrom/preinstall/Via.apk \
     vendor/bestrom/prebuilt/preinstall/MiXplorer.apk:$(TARGET_COPY_OUT_PRODUCT)/etc/bestrom/preinstall/MiXplorer.apk

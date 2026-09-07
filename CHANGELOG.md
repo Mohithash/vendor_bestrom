@@ -94,6 +94,10 @@ Files
     run; it asks for no camera, location, microphone or contacts
     permission. Archive formats past ZIP need his separate MiX Archive
     add-on, which is not bundled. Adds 5.3 MB to /product.
+  * Both preloads are copied into the image byte for byte and are never
+    re-signed, which is what MiXplorer's author requires. Release
+    signing is told to skip /product/etc/bestrom/preinstall; without
+    that flag a release-signed build stops on a missing key for them.
   * A preload that fails to install because the device is out of space,
     or because the first boot was cut short, is now retried on the next
     boot instead of being written off. One that fails for a reason a
