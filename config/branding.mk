@@ -142,9 +142,30 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     CromiteWebView
 
-# Keyboard is on the hot path of every text field; compile it speed like the launcher/SystemUI.
-PRODUCT_DEXPREOPT_SPEED_APPS += \
-    LatinIME
+# LeanType in place of AOSP LatinIME. LatinIME is added twice - by
+# build/make/target/product/handheld_product.mk and by
+# vendor/voltage/config/common_mobile.mk - so it cannot be dropped from here;
+# the module's overrides: ["LatinIME"] removes both.
+#
+# LeanType publishes no locale-tagged subtypes, so the framework will not
+# auto-enable it once LatinIME is gone. BestromPreinstaller seeds
+# Settings.Secure.DEFAULT_INPUT_METHOD on first boot; see
+# vendor/bestrom/prebuilt/LeanType/README.md.
+PRODUCT_PACKAGES += \
+    LeanType
+
+# The keyboard is deliberately NOT in PRODUCT_DEXPREOPT_SPEED_APPS, where
+# LatinIME used to be: on peridot that list changes nothing, because
+# device/xiaomi/peridot/device.mk sets
+# PRODUCT_DEX_PREOPT_DEFAULT_COMPILER_FILTER := speed and every app is AOT
+# compiled whole regardless. Better to not claim an intent the entry does not
+# carry.
+#
+# The size is real either way, and it is the largest line item in this swap.
+# LatinIME's bulk was dictionary assets and it compiled to a 2.3 MB odex;
+# LeanType's bulk is code and compiles to 32 MB of odex plus 19 MB of vdex -
+# 64 MB installed against LatinIME's 22 MB. Recovering it means changing the
+# device-wide compiler filter, which is every app's decision, not this one's.
 
 # Removable preloads: installed once on first boot by BestromPreinstaller as
 # ordinary user apps, so users can uninstall them. Via Browser 7.3.3

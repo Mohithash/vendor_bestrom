@@ -1,0 +1,62 @@
+//
+// SPDX-FileCopyrightText: BestROM
+// SPDX-License-Identifier: Apache-2.0
+//
+// LeanType, a HeliBoard fork, shipped in place of AOSP LatinIME.
+//
+// overrides: ["LatinIME"] drops the AOSP module, which is added twice - by
+// build/make/target/product/handheld_product.mk and by
+// vendor/voltage/config/common_mobile.mk. Doing it here rather than editing
+// either file keeps BestROM out of vendor/voltage.
+//
+// preprocessed: true is mandatory next to presigned: true.
+// build/soong/scripts/check_prebuilt_presigned_apk.py rejects any presigned
+// APK with targetSdkVersion >= 30 without it. Keeping the upstream signature
+// matters here beyond the build check: only an APK signed with LeanBit Lab's
+// key can be installed as an update over the system copy, and F-Droid's own
+// build of com.leanbitlab.leantype carries that same key, so re-signing with
+// the release key would permanently block F-Droid and GitHub updates.
+//
+// The app is not privileged and requests no signature-level permissions, so it
+// needs no privapp-permissions file and no seapp_contexts entry; it runs in
+// untrusted_app like any other third-party IME. It publishes its own
+// AndroidSpellCheckerService, which replaces the one LatinIME provided.
+//
+
+package {
+    default_applicable_licenses: ["vendor_bestrom_prebuilt_LeanType_license"],
+}
+
+// LeanType is GPL-3.0, inherited from HeliBoard and OpenBoard. LICENSE is the
+// upstream text at the shipped tag. Without this the module carries no
+// license_kinds at all, and the generated NOTICE - which lists AOSP LatinIME
+// today - would say nothing about the keyboard that replaces it.
+license {
+    name: "vendor_bestrom_prebuilt_LeanType_license",
+    visibility: [":__subpackages__"],
+    license_kinds: [
+        "SPDX-license-identifier-GPL-3.0",
+    ],
+    license_text: [
+        "LICENSE",
+    ],
+}
+
+android_app_import {
+    name: "LeanType",
+
+    apk: "LeanType.apk",
+
+    presigned: true,
+    preprocessed: true,
+
+    product_specific: true,
+
+    overrides: [
+        "LatinIME",
+    ],
+
+    dex_preopt: {
+        enabled: true,
+    },
+}
