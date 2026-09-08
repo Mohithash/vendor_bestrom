@@ -1,0 +1,44 @@
+//
+// SPDX-FileCopyrightText: BestROM
+// SPDX-License-Identifier: Apache-2.0
+//
+// Doto and Space Grotesk, both SIL Open Font License 1.1, both variable.
+// Taken verbatim from the upstream Google Fonts repository; the source names
+// carry brackets, which Ninja does not handle, so they are renamed on the way
+// in and nothing else about the files is touched.
+//
+//   ofl/doto/Doto[ROND,wght].ttf         -> Doto-Variable.ttf
+//     456924 B  sha256 6f4fe7d37853b91df3698daa84cde2dbe1c9695d88c986e6510134910337d426
+//   ofl/spacegrotesk/SpaceGrotesk[wght].ttf -> SpaceGrotesk-Variable.ttf
+//     136676 B  sha256 acad6de1fc93436f5c0f1f4137751ef04f1aea3063e7036535970ffcfbd79f72
+//
+// The .woff2 files that came with the design mock are subsetted web builds
+// (latin / latin-ext / vietnamese only) and must never be shipped.
+
+package {
+    default_applicable_licenses: ["vendor_bestrom_prebuilt_fonts_license"],
+}
+
+license {
+    name: "vendor_bestrom_prebuilt_fonts_license",
+    package_name: "BestROM prebuilt fonts",
+    license_kinds: ["SPDX-license-identifier-OFL"],
+    license_text: [
+        "OFL-Doto.txt",
+        "OFL-SpaceGrotesk.txt",
+    ],
+}
+
+// prebuilt_font installs into <partition>/fonts; product_specific puts these in
+// /product/fonts, which is where fonts_customization.xml resolves names from.
+prebuilt_font {
+    name: "Doto-Variable.ttf",
+    src: "Doto-Variable.ttf",
+    product_specific: true,
+}
+
+prebuilt_font {
+    name: "SpaceGrotesk-Variable.ttf",
+    src: "SpaceGrotesk-Variable.ttf",
+    product_specific: true,
+}

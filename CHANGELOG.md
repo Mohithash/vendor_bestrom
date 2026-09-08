@@ -10,6 +10,33 @@ Tooling
     copyfile from vendor/bestrom/tools. After one repo sync a client
     starts the server itself; it needs uv and Python 3.11 on the machine.
 
+Look and feel
+  * A monochrome, true-black system theme is the default. Material You
+    generates its palette with chroma zero, and in dark mode the page and
+    the lowest surface are pure black. The surface ramp above them stays
+    stepped (0C / 10 / 17 / 1B) so Settings cards, dialogs and the volume
+    panel still read as cards on a page.
+  * "Pure black" under Settings > Display > Dark theme is on out of the
+    box. It is the same switch as before and still turns everything back
+    to the tonal dark greys.
+  * Two fonts ship with the ROM, both SIL Open Font License 1.1 from
+    Google Fonts: Space Grotesk for anything you read, and Doto - a
+    dot-matrix face - for the lock screen and always-on clock. Space
+    Grotesk is the default body and headline font; the font picker in
+    Settings still overrides it, and the clock stays dot-matrix whichever
+    font you pick.
+  * No window blur anywhere: the shade, the app-launch transition and
+    window backgrounds all draw flat. SurfaceFlinger no longer advertises
+    background blur at all, which removes a full-screen downsample and
+    upsample pass from every shade drag.
+  * Quick settings tiles are full pills when they are on, matching the
+    off state. Notification cards are a little tighter, 24dp instead of
+    28dp.
+  * The app drawer background is opaque instead of 60% translucent. It
+    reads better on black and it is one less blended layer for the
+    compositor.
+  * Animation scales are untouched - still 1.0x.
+
 Camera
   * MiuiCamera is the camera again (com.android.camera, Xiaomi's port).
     Aperture is dropped - bestrom_peridot.mk keeps PRODUCT_NO_CAMERA := true

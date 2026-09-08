@@ -206,3 +206,25 @@ PRODUCT_PACKAGES += \
 PRODUCT_COPY_FILES += \
     vendor/bestrom/prebuilt/preinstall/Via.apk:$(TARGET_COPY_OUT_PRODUCT)/etc/bestrom/preinstall/Via.apk \
     vendor/bestrom/prebuilt/preinstall/MiXplorer.apk:$(TARGET_COPY_OUT_PRODUCT)/etc/bestrom/preinstall/MiXplorer.apk
+
+# Typography. Two OFL-1.1 variable faces from google/fonts, installed to
+# /product/fonts by prebuilt_font modules in vendor/bestrom/prebuilt/fonts.
+# The families themselves are declared in vendor/voltage/fonts/fonts_customization.xml
+# - /product/etc/fonts_customization.xml is the ONLY OEM font hook the platform
+# reads (SystemFonts.java OEM_XML, system_fonts.cpp), there can be exactly one of
+# it, and vendor/voltage already owns the module that installs it, so a family is
+# added by editing that file rather than by shipping a second one.
+# frameworks/base/data/fonts/fonts.xml is NOT edited - it is deprecated as a source
+# of installed fonts on A17 and nothing would pick the entry up.
+PRODUCT_PACKAGES += \
+    Doto-Variable.ttf \
+    SpaceGrotesk-Variable.ttf
+
+# The families are selected by config_bodyFontFamily / config_headlineFontFamily /
+# config_clockFontFamily in device/xiaomi/peridot/overlay/FrameworkOverlayPeridot.
+# No font RRO and no /product/overlay/config/config.xml: shipping an overlay config
+# for a partition turns OFF the android:isStatic -> immutable, default-enabled
+# conversion for every other overlay on that partition (OverlayConfig skips the
+# fallback as soon as getConfigurations() returns non-null), which would silently
+# disable the carrier, telephony, network-stack, permission-controller, DocumentsUI
+# and face-unlock overlays that live on /product.
