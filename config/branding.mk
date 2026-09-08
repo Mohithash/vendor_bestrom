@@ -99,6 +99,17 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     BestromPreinstaller
 
+# Edge - gesture and key remapping (packages/apps/Edge), a native port of the
+# EdgeX Xposed module. A platform-signed privileged system_ext app; instead of
+# Xposed it is loaded into system_server by com.android.server.bestrom.EdgeLoader
+# at the end of InputManagerService.start(), and InputManagerService calls it on
+# the input filter and key interception paths.
+#
+# The privapp allowlist module comes along automatically via the required:
+# clause in packages/apps/Edge/Android.bp.
+PRODUCT_PACKAGES += \
+    Edge
+
 # NOTE: org.bestrom.version is assigned above and only above. It is what the
 # Updater reports as PROP_BUILD_VERSION (Constants.java) and what the Settings
 # "About" version row reads, so it carries the short BESTROM_VERSION - the same
