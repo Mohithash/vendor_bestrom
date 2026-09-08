@@ -71,6 +71,11 @@
   <!-- Nullroute is on branch main, not 17, so revision is spelled out here
        rather than inherited from the bestrom remote. -->
   <project name="packages_apps_Nullroute" path="packages/apps/Nullroute" remote="bestrom" revision="main" />
+  <!-- The resolver carries the Nullroute filter hooks, so it is forked. Without
+       this a sync restores the stock resolver and the ROM blocks nothing, with
+       nothing to say so. -->
+  <remove-project name="packages_modules_DnsResolver" />
+  <project name="packages_modules_DnsResolver" path="packages/modules/DnsResolver" remote="bestrom" />
   <!-- GameSpace is debloated on peridot, so its sources are not needed. -->
   <remove-project name="packages_apps_GameSpace" />
 </manifest>
