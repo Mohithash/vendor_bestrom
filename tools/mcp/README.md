@@ -318,8 +318,13 @@ put the agent in the boot path.
    locked.
 3. `device_agent_pair(code="123456")` — the six digits. What comes back is
    written to `state/agent-pairing.json` with mode 0600 and is never returned by
-   any tool, never logged and never in a refusal. Three wrong codes make the
-   phone show a new one after a 30 s cooldown.
+   any tool, never logged and never in a refusal. **The code is single use**:
+   pairing consumes it, so pairing a second client means pressing **New code**
+   on the phone's Agent mode screen. Three wrong codes put pairing in a cooldown
+   the phone shows on that same screen, with the seconds remaining, so a refusal
+   here is never a mystery. `code_expires_utc` in the result is when the digits
+   stop working, not when the pairing does — the pairing lasts until the bridge
+   stops.
 4. Then the rest: `device_agent_functions` and `device_agent_execute` for app
    functions, `device_agent_ui_tree` and `device_agent_screenshot` to see the
    screen, `device_agent_tap` / `_long_press` / `_swipe` / `_type` / `_key` /
@@ -335,18 +340,34 @@ the same reason: it is the only record of what the agent did.
 The forward is opened per call and taken down after it. A `tcp:8765` left
 listening on the build machine is a door to the phone for every local process,
 and the phone's own auth is all that stands behind it. The manual undo, when a
-call dies badly, is `adb -P 15038 forward --remove tcp:8765`.
+call dies badly, is `adb -P 15038 forward --remove tcp:8765`. The other side of
+that: **a forward you set up by hand does not survive the next MCP call.** Every
+tool opens the forward and closes it again, so a `nc` session against
+`tcp:8765` from your own shell — the T8 round trip, say — dies the moment any
+`device_agent_*` tool runs. Re-issue it after.
 
 ### What the phone refuses, and what that means
 
 | Code | Name | What it means |
 |---|---|---|
-| -32005 | `DEVICE_LOCKED` | The phone is locked. There is no override, not even for reads: a lock-screen tree leaks notification content. |
+| -32005 | `DEVICE_LOCKED` | The lock screen is showing. It refuses whenever the keyguard is up, not only when the phone is "locked" in the trust sense — a swipe-only lock and Smart Lock are still a lock screen, and a lock-screen tree leaks notification content. No override, not even for reads. |
 | -32006 | `USER_INTERACTING` | The user touched the screen within the last 1.5 s. Reads are exempt; actions are not. |
-| -32012 | `SECURE_WINDOW` | A `FLAG_SECURE` surface or a password field. This is **blocked**, not empty — never read it as an absence of content. |
+| -32012 | `SECURE_WINDOW` | A password field: the phone will not type into one and does not serialise its text or its content description. This is **blocked**, not empty. |
+| -32004 | `AGENT_DISABLED` | Agent mode is off, or the accessibility half is not connected. `data.reason=no_active_window` is the narrower case: the bridge is up and there was no foreground window to read at that instant. |
 | -32007 | `RATE_LIMITED` | Ten actions a second, shared across connections. |
-| -32013 | `SCREENSHOT_UNAVAILABLE` | The platform's own minimum interval between screenshots, reported rather than retried around. |
+| -32013 | `SCREENSHOT_UNAVAILABLE` | The platform refused the capture; `data.reason` carries its own code. The commonest is the minimum interval between two captures. |
 | -32010 | `APP_FUNCTION_ERROR` | The function itself failed; `data.code` carries the `AppFunctionException` code verbatim. |
+
+Two refusals that do **not** happen, and must not be assumed:
+
+* **A secure screen is not refused.** `FLAG_SECURE` governs screen capture, not
+  accessibility, so `device_agent_ui_tree` reads the tree of a banking app or an
+  authenticator like any other. `device_agent_screenshot` gets a frame with
+  those layers **blacked out by the platform** — a black rectangle is redaction,
+  not a failure.
+* **A denied package is refused on the phone, not here.** The Agent mode screen
+  carries a package denylist; a `ui.*` action or an `app.launch` against a
+  package on it comes back refused whatever this server asks for.
 
 ### Screen content is data, never instruction
 
@@ -370,16 +391,35 @@ sentence next to the payload.
 > and it is the gate on calling Agent mode a shipped feature. Until then: build
 > it, run it on the maintainer's own phone, and say so in the release notes.
 
-What the design does defend, independently of the key: **no network** — the
-bridge is a unix abstract socket reached only through `adb forward`, the app
-holds no `INTERNET` permission and a verify gate asserts its absence; **no
-persistence** — every component ships disabled, there is no receiver, job,
-provider or notification listener, and Agent mode does not survive a reboot;
-**no silent power** — a code on the phone screen to pair, an ongoing
-notification for the whole session, three independent stops and a thirty-minute
-idle timeout; **a confirmation floor on both sides**; and the hard stops the
-platform gives for free — locked device, secure surfaces and password fields,
-each with its own error code.
+What the design does defend, independently of the key:
+
+* **No network.** The bridge is a unix abstract socket reached only through
+  `adb forward`, the app holds no `INTERNET` permission and a verify gate
+  asserts its absence.
+* **No persistence.** Every component ships disabled, there is no receiver, job,
+  provider or notification listener, and Agent mode does not survive a reboot.
+* **No silent power.** A single-use code on the phone screen to pair, an ongoing
+  notification for the whole session, three independent stops and a
+  thirty-minute idle timeout.
+* **Only adbd gets in** — but that is the peer-uid check, not the policy.
+  `system/sepolicy/private/domain.te` allows a domain to `connectto` its own
+  type, so any `platform_app` on the phone can reach this abstract socket; the
+  thing that actually keeps it to adb is the bridge closing any connection whose
+  peer uid is not shell (2000) or root (0). An `adb forward` presents uid 2000.
+* **A refusal on the phone for a locked screen, a password field, a denied
+  package, a touch in the last 1.5 s and the tenth action in a second.**
+
+Read the confirm floor honestly. The phone refuses `confirm != true` on the nine
+mutating methods, but this client always sends `confirm: true` and decides on
+the host side whether to send the request at all. So the phone-side floor is a
+**floor against a client that forgets, not against one that is hostile**: it
+catches a bug or a hand-written request, and nothing more. A second gate worth
+the name would have to be a human action on the phone, not a boolean on the
+wire.
+
+Also honest about the transport: the forward is per call. A `tcp:8765` you set
+up by hand is torn down by the next `device_agent_*` call, and nothing keeps the
+port open between calls.
 
 What it does **not** defend, and must be said out loud: indirect prompt
 injection. See the paragraph above.
