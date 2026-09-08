@@ -25,51 +25,11 @@
 # and the QS tile overlay, so they are deliberately not repeated here. Only the
 # four top-level artefacts are named.
 
-# ⚠ THE APP IS NOT IN THIS LIST YET, AND THAT IS NOT AN OVERSIGHT.
-#
-# packages/apps/Nullroute is missing the whole com.bestrom.nullroute.build
-# package - IndexBuilder, CanarySet and NeverBlockFloor. Eight Kotlin files
-# import it (core/Generation.kt, importer/ImportModel.kt, job/UpdateJobService.kt,
-# ui/UpdateFragment.kt, ui/RecoveryActions.kt and three more) and there is no
-# such directory in the repository, so `mka Nullroute` fails at the Kotlin
-# compile with ~40 unresolved references. Nothing in this tree can fix that; the
-# source has to arrive upstream.
-#
-# What ships meanwhile is exactly the de-risking set rom/README.md section 11
-# asks for on day one: the L0 hosts floor, the four resolver hooks, the SELinux
-# policy, init.nullroute.rc, the seeder and the CLI. The resolver falls open with
-# no index, which is the designed behaviour, so the device is coherent - it
-# simply blocks only what L0 carries.
-#
-# TO TURN THE APP BACK ON once the build package lands: uncomment Nullroute
-# below and delete the explicit block after it. Those modules are only listed
-# because the app's `required:` clause in packages/apps/Nullroute/Android.bp is
-# what normally pulls them in, and with the app absent nothing else names them.
 PRODUCT_PACKAGES += \
+    Nullroute \
     nrctl \
     nullroute_seed \
     nullroute_etc_hosts
-
-# PRODUCT_PACKAGES += \
-#     Nullroute
-
-# Stand-ins for the app's `required:` list. Deliberately NOT the five
-# app-scoped XMLs (privapp_whitelist_com.bestrom.nullroute,
-# nullroute_gid_permissions, preinstalled-packages-platform-nullroute,
-# sysconfig-nullroute, default-permissions-nullroute): every one of them is
-# configuration for a package that is not installed, and shipping permission
-# grants for an absent app is the kind of thing that outlives the reason for it.
-# They come back automatically with the app, through `required:`.
-PRODUCT_PACKAGES += \
-    init.nullroute.rc \
-    nullroute_baseline_domains \
-    nullroute_baseline_domains_sha256 \
-    nullroute_neverblock \
-    nullroute_antifraud \
-    nullroute_attribution \
-    nullroute_profile_lite \
-    nullroute_profile_balanced \
-    nullroute_profile_aggressive
 
 # ---------------------------------------------------------------------------
 # Guard 1 — anti-substitution (F11)
