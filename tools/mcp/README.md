@@ -297,8 +297,10 @@ is not something that should happen behind an agent call. The default range is
 
 Agent mode is a switch on the phone: **Settings > Custom Tweaks > Agent mode**.
 With it off, `com.bestrom.agent` is an APK on disk — both its services ship
-`android:enabled="false"`, it has no receiver, no job and no provider, and it
-holds no network permission at all. With it on, it listens on the Linux abstract
+`android:enabled="false"`, it has no receiver, no job and no provider, and the
+only permission it holds that reaches off the device is `INTERNET`, which the
+on-device runner's model client uses and nothing else does. With it on, it
+listens on the Linux abstract
 socket `bestrom_agent`, shows a six-digit pairing code and posts an ongoing
 notification for as long as it is running.
 
@@ -306,6 +308,24 @@ notification for as long as it is running.
 accessibility service takes itself back out of the secure setting, and this
 server's pairing is dead. That is deliberate: anything that restored it would
 put the agent in the boot path.
+
+### On-device runner
+
+The phone can also drive itself. `packages/apps/BestromAgent` ships a runner that
+takes a goal typed on the phone, asks a model the user configured and acts, with
+no adb and no help from this server. It is not a second implementation: it calls
+the same dispatcher these tools reach over the socket, so the keyguard and
+interaction checks, the denylist, the password-field refusal, the rate limiter,
+the confirmation floor and the audit entry are the same code for both callers. A
+guardrail added on one side applies to the other, and so does a bug.
+
+Two things follow from that and are worth knowing before you read a log. The app
+now holds `INTERNET`, used by the runner's model client and nothing else — the
+endpoint and the key are the user's, and BestROM runs neither. And the audit log
+carries entries these tools did not write: `agent.start`, `brain.call` with the
+model id, and `agent.end` come from a task the phone ran on its own. See
+`packages/apps/BestromAgent/README.md` for the runner, the tool schema it offers
+the model and the policy that classifies each call.
 
 ### The flow
 

@@ -1,6 +1,80 @@
 Unreleased (next build)
 =======================
 
+Agent mode
+  * BestROM can be driven by an agent. Settings > Custom Tweaks >
+    Advanced > Agent mode turns on a local bridge that a computer reaches
+    over adb; whatever is driving it can read the screen, tap, swipe,
+    type, take screenshots and call the app functions that Settings and
+    other apps publish.
+  * Agent mode can now also carry out a task on its own, with nothing
+    plugged in. You type what you want - "turn on battery saver", "open
+    Wi-Fi settings and tell me the network name" - and it reads the
+    screen, decides the next step and does it, one step at a time, until
+    it is done or you stop it. Same switch, same accessibility service;
+    what is new is that the deciding can happen on the phone.
+  * The thinking is done by a model you choose and pay for. BestROM runs
+    no endpoint and receives nothing. Agent mode > Brain takes a base
+    URL, a key and a model name, with presets for Anthropic, OpenAI,
+    Gemini, Groq, Cerebras and OpenRouter - and for a llama.cpp or Ollama
+    server on your own network, which is the option that sends nothing
+    off your LAN at all. Groq and Cerebras both have free tiers that
+    comfortably cover personal use.
+  * The key is sealed with a key held in the phone's keystore that only
+    works while the device is unlocked. It is never written to the log,
+    never shown back to you, and not included in a backup.
+  * Before it does anything that changes something, it asks: what it is
+    about to do and to what, with Allow, Deny, and Allow all for this
+    task. Reading the screen never asks. There is an off switch for the
+    asking, inside a single task, and it is off by default.
+  * Some things it will not do whatever you allow: change a lock screen,
+    bootloader, developer or accessibility setting; open a payment or
+    password app your task never mentioned; type into a password field;
+    or touch itself. Those are refused by the phone, not judged by the
+    model.
+  * Everything a task sees on screen is treated as data and never as an
+    instruction. Text that pretends to be a system message, and text
+    hidden with invisible or right-to-left characters, is neutralised
+    before the model reads it. That makes the obvious attacks harder; it
+    does not make the agent immune to being talked into something it is
+    allowed to do, and the README says so plainly.
+  * Every task has a step limit and a token limit, both of which you can
+    change, and it stops by itself if it starts repeating. A notification
+    says what it is doing for as long as it is doing it and carries Stop.
+    The activity log records the start of each task, every call to the
+    model with the model's name, and how each task ended - never what you
+    typed and never what was on screen.
+  * Agent mode can be picked under Settings > Apps > Default apps >
+    Digital assistant, and then reached by holding the power button once
+    you have set that under Gestures. Neither is changed for you: holding
+    power still opens the power menu unless you say otherwise, and
+    nothing holds the assistant role out of the box. It ignores anything
+    an app tries to hand it through that gesture - a task only ever
+    starts from text you typed into its own field.
+  * Turning the switch on shows a six-digit code you type on the computer
+    to pair, and a notification that stays up for as long as it is
+    running. Tapping the notification stops it. Agent mode turns itself
+    off when the phone restarts.
+  * It refuses to act while the phone is locked, while you are touching
+    the screen, on password fields and on apps that block screenshots.
+    Everything it did is listed on the same screen.
+  * It costs nothing when it is off: no service, no receiver, no process
+    and nothing at boot. The task runner is a thread inside the service
+    that is already running, and only while a task is running.
+  * Two apps you excluded on the Agent mode screen were not as excluded
+    as the screen said: their app functions could still be called and
+    their launcher entry could still be started. Both are refused now.
+
+App functions
+  * Settings now publishes its eleven device-state functions, so an agent
+    can read battery, storage, data usage, notification and app state and
+    change settings through Settings' own preference layer instead of
+    poking values directly. They were built into Android 17 and switched
+    off by a single resource value.
+  * The launcher publishes its four workspace functions - read the home
+    screen, list installed apps and widgets, remove an item. They were
+    compiled into the launcher but never indexed.
+
 WebView
   * The Cromite WebView is now built from BestROM's own fork of Cromite
     (github.com/Mohithash/cromite, branch bestrom-148, same 148.0.7778.168
@@ -25,6 +99,10 @@ Tooling
   * AGENTS.md, CLAUDE.md and .mcp.json land at the tree root via repo
     copyfile from vendor/bestrom/tools. After one repo sync a client
     starts the server itself; it needs uv and Python 3.11 on the machine.
+  * That server gained fifteen device_agent tools that drive Agent mode
+    from the build machine. Every action needs an explicit confirmation,
+    the pairing code never appears in tool output, and the tools and the
+    phone's own runner go through the same guardrails.
 
 Look and feel
   * A monochrome, true-black system theme is the default. Material You
