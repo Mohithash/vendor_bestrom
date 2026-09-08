@@ -254,3 +254,22 @@ PRODUCT_PACKAGES += \
 # fallback as soon as getConfigurations() returns non-null), which would silently
 # disable the carrier, telephony, network-stack, permission-controller, DocumentsUI
 # and face-unlock overlays that live on /product.
+
+# Nullroute (packages/apps/Nullroute) - resolver-native ad, tracker and malware
+# blocking. The matcher is linked into libnetd_resolv inside the
+# com.android.tethering APEX, the index is mmap'd from /data/misc/nullroute, and
+# a platform-signed privileged system_ext app owns the UI and the lists.
+#
+# Its own rom/README.md says to add this one include to
+# vendor/lineage/config/common.mk. There is no vendor/lineage here, and the
+# literal translation - vendor/voltage/config/common.mk - is the wrong answer
+# twice over: it would put a BestROM feature in the Voltage rebase surface, and
+# this file is where every other BestROM package already lives. branding.mk is
+# also the only vendor/bestrom/config/*.mk that
+# device/xiaomi/peridot/bestrom_peridot.mk inherits, so a nullroute.mk that is
+# not reached from here is dead weight.
+#
+# include, not inherit-product: include is textual, so nullroute.mk's
+# PRODUCT_PACKAGES and property additions land in this file's own product node,
+# which is already proven to reach the build.
+include vendor/bestrom/config/nullroute.mk

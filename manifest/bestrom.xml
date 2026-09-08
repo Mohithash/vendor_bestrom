@@ -68,6 +68,9 @@
   <project name="packages_apps_Powerhub" path="packages/apps/Powerhub" remote="bestrom" />
   <remove-project name="system_sepolicy" />
   <project name="system_sepolicy" path="system/sepolicy" remote="bestrom" />
+  <!-- Nullroute is on branch main, not 17, so revision is spelled out here
+       rather than inherited from the bestrom remote. -->
+  <project name="packages_apps_Nullroute" path="packages/apps/Nullroute" remote="bestrom" revision="main" />
   <!-- GameSpace is debloated on peridot, so its sources are not needed. -->
   <remove-project name="packages_apps_GameSpace" />
 </manifest>
