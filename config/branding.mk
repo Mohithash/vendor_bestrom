@@ -110,6 +110,20 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     Edge
 
+# BestromAgent (packages/apps/BestromAgent) - the Agent mode bridge. A
+# platform-signed privileged system_ext app whose every component ships
+# android:enabled="false": with the switch off it is an APK on disk and
+# nothing else. No receiver, no job, no provider, no notification listener,
+# so it is not in the boot path and not in the idle drain budget.
+#
+# Its privapp allowlist (EXECUTE_APP_FUNCTIONS, WRITE_SECURE_SETTINGS) comes
+# along automatically via the required: clause in
+# packages/apps/BestromAgent/Android.bp - it must not be listed separately. A
+# mismatch between that file and the app manifest aborts the boot on a build
+# with ro.control_privapp_permissions=enforce.
+PRODUCT_PACKAGES += \
+    BestromAgent
+
 # NOTE: org.bestrom.version is assigned above and only above. It is what the
 # Updater reports as PROP_BUILD_VERSION (Constants.java) and what the Settings
 # "About" version row reads, so it carries the short BESTROM_VERSION - the same
