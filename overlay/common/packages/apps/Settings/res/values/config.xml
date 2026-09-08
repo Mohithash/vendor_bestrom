@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: BestROM
+     SPDX-License-Identifier: Apache-2.0
+
+     Build-time overlay, not an RRO. The bool is read by a manifest attribute
+     (AndroidManifest.xml:6365, android:enabled on
+     .appfunctions.DeviceStateAppFunctionService), and manifest attributes are
+     resolved when the package is parsed, against an AssetManager built from the
+     APK alone. A runtime overlay is never consulted there, so the value has to
+     be compiled into Settings.apk itself.
+-->
+<resources>
+    <!-- Turns on the 11 device-state app functions: getDeviceStateMetadata,
+         getDeviceStateItem, setDeviceStateItem, getBatteryDeviceState,
+         getAppsDeviceState and the rest. Upstream default is false
+         (packages/apps/Settings/res/values/config.xml:1096). The featureFlag
+         com.android.settings.flags.device_state is already enabled, so this is
+         the only thing holding the component back. -->
+    <bool name="config_device_state_app_functions_enabled">true</bool>
+</resources>
