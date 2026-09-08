@@ -45,6 +45,7 @@ KNOWN_AREAS = {
 # already reads that way. Kept apart from KNOWN_AREAS so the list of tree paths
 # above stays a list of tree paths.
 SHORT_AREAS = {
+    "BestromAgent",
     "AndroidBlackTheme", "Freezer", "Launcher3", "LogViewer", "Powerhub",
     "Preinstaller", "Settings", "SettingsLib", "SetupWizard", "SystemUI",
     "Updater", "base", "check_boot_jars", "config", "fonts", "gen_build_prop",
