@@ -76,6 +76,11 @@
        nothing to say so. -->
   <remove-project name="packages_modules_DnsResolver" />
   <project name="packages_modules_DnsResolver" path="packages/modules/DnsResolver" remote="bestrom" />
+  <!-- system/core carries the SafetyNet property spoof fix. The upstream history
+       has a 219 MB test blob that GitHub refuses, so the fork is that history with
+       the blob stripped; the tree at HEAD is byte-identical. -->
+  <remove-project name="system_core" />
+  <project name="system_core" path="system/core" remote="bestrom" />
   <!-- GameSpace is debloated on peridot, so its sources are not needed. -->
   <remove-project name="packages_apps_GameSpace" />
 </manifest>
