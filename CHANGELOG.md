@@ -23,6 +23,11 @@ Agent mode
   * The key is sealed with a key held in the phone's keystore that only
     works while the device is unlocked. It is never written to the log,
     never shown back to you, and not included in a backup.
+  * The brain is the only thing in Agent mode that talks to the network,
+    and it speaks plain HTTP only to an address on your own network -
+    everywhere else it requires https, so a key cannot leave the phone in
+    the clear. The task screen says which endpoint the screen contents
+    are going to while they are going there.
   * Before it does anything that changes something, it asks: what it is
     about to do and to what, with Allow, Deny, and Allow all for this
     task. Reading the screen never asks. There is an off switch for the
@@ -41,9 +46,10 @@ Agent mode
   * Every task has a step limit and a token limit, both of which you can
     change, and it stops by itself if it starts repeating. A notification
     says what it is doing for as long as it is doing it and carries Stop.
-    The activity log records the start of each task, every call to the
-    model with the model's name, and how each task ended - never what you
-    typed and never what was on screen.
+    The activity log gains four entries per task: the start, every call
+    to the model with the model's name, every action the phone refused,
+    and how the task ended - never what you typed and never what was on
+    screen.
   * Agent mode can be picked under Settings > Apps > Default apps >
     Digital assistant, and then reached by holding the power button once
     you have set that under Gestures. Neither is changed for you: holding
@@ -56,8 +62,9 @@ Agent mode
     running. Tapping the notification stops it. Agent mode turns itself
     off when the phone restarts.
   * It refuses to act while the phone is locked, while you are touching
-    the screen, on password fields and on apps that block screenshots.
-    Everything it did is listed on the same screen.
+    the screen and on password fields, and it blacks out the protected
+    parts of a screenshot rather than refusing it. Everything it did is
+    listed on the same screen.
   * It costs nothing when it is off: no service, no receiver, no process
     and nothing at boot. The task runner is a thread inside the service
     that is already running, and only while a task is running.

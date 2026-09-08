@@ -321,11 +321,15 @@ guardrail added on one side applies to the other, and so does a bug.
 
 Two things follow from that and are worth knowing before you read a log. The app
 now holds `INTERNET`, used by the runner's model client and nothing else — the
-endpoint and the key are the user's, and BestROM runs neither. And the audit log
-carries entries these tools did not write: `agent.start`, `brain.call` with the
-model id, and `agent.end` come from a task the phone ran on its own. See
-`packages/apps/BestromAgent/README.md` for the runner, the tool schema it offers
-the model and the policy that classifies each call.
+endpoint and the key are the user's, and BestROM runs neither. That client
+speaks plain HTTP only to an address on the user's own network and requires
+https everywhere else, so a key cannot leave the phone in the clear, and the
+task screen names the endpoint the screen contents are going to while they are
+going there. And the audit log carries four entries per task that these tools
+did not write: `agent.start`, `brain.call` with the model id, `agent.refused`
+with the tool name, and `agent.end` come from a task the phone ran on its own.
+See `packages/apps/BestromAgent/README.md` for the runner, the tool schema it
+offers the model and the policy that classifies each call.
 
 ### The flow
 
