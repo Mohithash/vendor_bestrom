@@ -378,13 +378,17 @@ Two refusals that do **not** happen, and must not be assumed:
   those layers **blacked out by the platform** — a black rectangle is redaction,
   not a failure.
 * **A denied package is refused on the phone, not here.** The Agent mode screen
-  carries a package denylist; a `ui.*` action or an `app.launch` against a
-  package on it comes back refused whatever this server asks for. The wire
-  shape is `-32012` with `data.reason=denied_package` and `data.package` naming
-  it. There is no host-side override and there is nothing to retry — **the
-  denylist is edited on the phone, on the Agent mode screen**, and the phone
-  enforces it because it has to: an accessibility service is handed the tree of
-  every app, so an exclusion is enforced there or not at all.
+  carries a package denylist, empty by default and editable only there — never
+  over the bridge. A package on it is refused by `ui.tree`, `ui.screenshot` and
+  `ui.tap`, matched exactly, with `-32012`, `data.reason=denied_package` and
+  `data.package` naming it. There is no host-side override and there is nothing
+  to retry: **the denylist is edited on the phone, on the Agent mode screen.**
+  The phone enforces it because it has to — an accessibility service is handed
+  the tree of every app, so an exclusion is enforced there or not at all.
+  Read the scope literally: it is those three methods. `ui.long_press`,
+  `ui.swipe`, `ui.type`, `ui.key` and `app.launch` carry no denylist check on
+  the phone, so a denied package can still be swiped at by coordinate or
+  started by name. Treat the list as "do not read this app", not as a sandbox.
 
 ### Reading two results honestly
 
