@@ -41,6 +41,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
+from pydantic import ValidationError
+
 from .. import redact
 from ..config import Config
 from ..models import (
@@ -125,6 +127,11 @@ ERROR_NAMES = {
     -32009: "ACTION_FAILED",
     -32010: "APP_FUNCTION_ERROR",
     -32011: "STALE_TREE",
+    # The bridge's own constant name. Its meaning is narrower than the name
+    # suggests: a password-field refusal and nothing else. "There is no active
+    # window to read" arrives as -32004 with data.reason=no_active_window, and a
+    # screen an app marked FLAG_SECURE is not refused at all — see the
+    # device_agent_ui_tree and device_agent_screenshot descriptions.
     -32012: "SECURE_WINDOW",
     -32013: "SCREENSHOT_UNAVAILABLE",
     -32014: "TIMEOUT",
@@ -141,7 +148,11 @@ ERROR_HINTS = {
     ),
     -32002: "wrong pairing code. Three wrong codes make the phone show a new one",
     -32003: "the phone refused it for want of confirm — its own gate, not this server's",
-    -32004: "Agent mode is off on the phone, or the accessibility service is not connected",
+    -32004: (
+        "Agent mode is off on the phone, or the accessibility service is not connected. "
+        "data.reason=no_active_window means the bridge is up and there was simply no "
+        "foreground window to read at that instant — try again"
+    ),
     -32005: "the phone is locked. There is no override; unlock it and try again",
     -32006: "the user is touching the screen. The phone refuses to act within 1.5 s of a touch",
     -32007: "rate limited by the phone: ten actions a second, shared across connections",
@@ -150,10 +161,14 @@ ERROR_HINTS = {
     -32010: "the app function itself failed; data.code is the AppFunctionException code",
     -32011: "that tree_id is stale. Call device_agent_ui_tree again and use the new ids",
     -32012: (
-        "a secure surface or a password field. This is 'blocked', not 'empty' — "
-        "do not read it as an absence of content"
+        "a password field. The phone refuses to type into one and never serialises "
+        "its text. This is 'blocked', not 'empty' — do not read it as an absence of "
+        "content, and do not retry it against the same node"
     ),
-    -32013: "the platform refused the screenshot; data.reason carries its own code",
+    -32013: (
+        "the platform refused the screenshot; data.reason carries its own code. The "
+        "commonest one is the minimum interval between two captures"
+    ),
     -32014: "the phone timed the call out",
     -32015: "that package is not installed on the phone",
     -32600: "the bridge rejected the request shape",
@@ -265,24 +280,28 @@ def read_secret(cfg: Config) -> str:
     return value if SECRET_RE.fullmatch(value) else ""
 
 
-def write_secret(cfg: Config, value: str, expires_utc: str = "") -> bool:
+def write_secret(cfg: Config, value: str, code_expires_utc: str = "") -> bool:
     """Store the pairing secret with mode 0600. Returns whether it was written.
 
     ``os.open`` only applies the mode when it creates the file, so an existing
     one is chmod'ed as well: a file left behind at 0644 by an older run would
-    otherwise stay world-readable.
+    otherwise stay world-readable. The directory is created 0700 for the same
+    reason — a 0600 file under a 0755 directory still advertises its name.
+
+    ``code_expires_utc`` is when the six digits stop being accepted, not when
+    this pairing does. The pairing lasts as long as the bridge does.
     """
     if not SECRET_RE.fullmatch(value or ""):
         return False
     path = state_path(cfg)
     try:
-        path.parent.mkdir(parents=True, exist_ok=True)
+        path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         payload = json.dumps(
             {
                 "token": value,
                 "serial": cfg.device.serial,
                 "paired_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                "expires_utc": expires_utc,
+                "code_expires_utc": code_expires_utc,
             },
             indent=2,
         )
@@ -382,17 +401,24 @@ def _exchange(sock: socket.socket, request_id: int, method: str, params: dict) -
         return Reply(refused_reason=f"the bridge answered with something that is not JSON: {exc}")
     if not isinstance(payload, dict):
         return Reply(refused_reason="the bridge answered with a JSON value that is not an object")
-    if payload.get("id") != request_id:
+    answered_id = payload.get("id")
+    error = payload.get("error")
+    if answered_id != request_id and not (answered_id is None and isinstance(error, dict)):
         # One request in flight per connection, so this cannot happen unless the
         # stream has desynced. Saying so beats reporting another call's answer.
         return Reply(
             refused_reason=(
-                f"the bridge answered id {payload.get('id')!r} to request {request_id}; "
+                f"the bridge answered id {answered_id!r} to request {request_id}; "
                 "the connection is out of step"
             )
         )
-    if "error" in payload:
-        err = payload.get("error") or {}
+    if isinstance(error, dict) or "error" in payload:
+        # id:null is the bridge's shape for a failure it could not attribute to a
+        # request: a parse error, a bad request shape, or the refusal of a fifth
+        # connection. Those are the frames that matter most when something is
+        # already wrong, so the real code and message go through rather than a
+        # desync message that names none of it.
+        err = error if isinstance(error, dict) else {}
         data = err.get("data")
         return Reply(
             error=BridgeError(
@@ -428,6 +454,20 @@ class Session:
     auth_problem: str = ""
 
 
+# How much longer than the phone's own deadline the socket is allowed to wait.
+# A tool that asks the phone for 120 s asks this socket for 125, so the phone's
+# -32014 wins the race and the maintainer is told the call timed out rather than
+# the socket did. Clamping at max_request_timeout_s threw that headroom away at
+# the top of the range, which is where it is needed most.
+DEADLINE_HEADROOM_S = 10
+
+
+def socket_deadline(cfg: Config, timeout_s: int | None = None) -> int:
+    """The socket timeout for a call that asked for *timeout_s* seconds."""
+    asked = int(timeout_s or cfg.agent.request_timeout_s)
+    return max(5, min(asked, cfg.agent.max_request_timeout_s + DEADLINE_HEADROOM_S))
+
+
 def _session(
     cfg: Config,
     calls: list[tuple[str, dict]],
@@ -457,9 +497,7 @@ def _session(
     if problem:
         return failed(problem)
 
-    timeout = max(
-        5, min(int(timeout_s or cfg.agent.request_timeout_s), cfg.agent.max_request_timeout_s)
-    )
+    timeout = socket_deadline(cfg, timeout_s)
     try:
         sock = socket.create_connection(
             (cfg.device.adb_host, cfg.agent.port), timeout=cfg.agent.connect_timeout_s
@@ -569,15 +607,18 @@ def evidence_root(cfg: Config, out_dir: str = "") -> Path:
     """Where a screenshot or a spilled tree goes.
 
     ``out_dir`` is resolved against the path allowlist and then confined to the
-    evidence root, the same narrowing ``device_capture`` applies.
+    evidence root, the same narrowing ``device_capture`` applies. The confinement
+    is against the agent's own root — ``<evidence_dir>/agent`` — and not against
+    ``evidence_dir``, which would let a screenshot land anywhere in the whole
+    crash-sweep directory.
     """
     root = cfg.agent.evidence_root
     if out_dir:
         target = cfg.resolve_allowed(out_dir)
         try:
-            target.resolve().relative_to(cfg.agent.evidence_dir.resolve())
+            target.resolve().relative_to(root.resolve())
         except ValueError as exc:
-            raise ValueError(f"out_dir must live under {cfg.agent.evidence_dir}") from exc
+            raise ValueError(f"out_dir must live under {root}") from exc
     else:
         target = root
     target.mkdir(parents=True, exist_ok=True)
@@ -646,14 +687,17 @@ def agent_pair(cfg: Config, code: str) -> AgentPair:
     reply = request(cfg, "agent.pair", {"code": code}, authenticate=False)
     if not reply.ok:
         return AgentPair(refused_reason=reply.problem(), error=reply.error_model())
-    stored = write_secret(
-        cfg, str(reply.result.get("token") or ""), str(reply.result.get("expires_utc") or "")
-    )
+    # code_expires_utc is the CODE's expiry. The code is single use: pairing
+    # consumes it, and a second client needs the phone's "New code" button. What
+    # ends this pairing is the bridge stopping — a reboot, the idle timeout, the
+    # switch or agent.stop — not that timestamp passing.
+    expires = str(reply.result.get("code_expires_utc") or "")
+    stored = write_secret(cfg, str(reply.result.get("token") or ""), expires)
     return AgentPair(
         paired=stored,
         stored=stored,
         capabilities=[str(c) for c in (reply.result.get("capabilities") or [])],
-        expires_utc=str(reply.result.get("expires_utc") or ""),
+        code_expires_utc=expires,
         refused_reason=(
             ""
             if stored
@@ -665,35 +709,58 @@ def agent_pair(cfg: Config, code: str) -> AgentPair:
 # -- app functions ------------------------------------------------------
 
 
+# functions.list is the slowest call on the wire: the phone budgets 15 s for
+# searchAppFunctions and another 15 s for getAppFunctionStates, so a cold first
+# discovery can take 30 s. The default request timeout is 30 s too, which turns
+# a slow answer into a socket timeout at random.
+FUNCTIONS_TIMEOUT_S = 45
+
+
 def agent_functions(cfg: Config, package: str = "", include_schema: bool = True) -> AgentFunctions:
     params: dict = {"include_schema": bool(include_schema)}
     if package:
         params["package"] = package
-    reply = request(cfg, "functions.list", params)
+    reply = request(cfg, "functions.list", params, timeout_s=FUNCTIONS_TIMEOUT_S)
     if not reply.ok:
         return AgentFunctions(refused_reason=reply.problem(), error=reply.error_model())
     functions = []
-    for entry in reply.result.get("functions") or []:
+    notes: list[str] = []
+    for index, entry in enumerate(reply.result.get("functions") or []):
         if not isinstance(entry, dict):
+            notes.append(f"entry {index} is not an object and was dropped")
             continue
-        schema = entry.get("schema") or {}
-        functions.append(
-            AgentFunction(
-                package=str(entry.get("package") or ""),
-                function_id=str(entry.get("function_id") or ""),
-                enabled=bool(entry.get("enabled", True)),
-                description=str(entry.get("description") or ""),
-                schema_category=str(schema.get("category") or ""),
-                schema_name=str(schema.get("name") or ""),
-                schema_version=int(schema.get("version") or 0),
-                parameters=_scrub(entry.get("parameters") or {}),
-                response=_scrub(entry.get("response") or {}),
+        schema = entry.get("schema")
+        schema = schema if isinstance(schema, dict) else {}
+        # One entry the phone shapes differently must not cost the whole list.
+        # The metadata comes out of a GenericDocument flattener, so a property
+        # that is repeated on one function and scalar on another is a wire fact,
+        # not a bug this server can fix.
+        try:
+            functions.append(
+                AgentFunction(
+                    package=str(entry.get("package") or ""),
+                    function_id=str(entry.get("function_id") or ""),
+                    enabled=bool(entry.get("enabled", True)),
+                    description=str(entry.get("description") or ""),
+                    schema_category=str(schema.get("category") or ""),
+                    schema_name=str(schema.get("name") or ""),
+                    schema_version=int(schema.get("version") or 0),
+                    parameters=_scrub(entry.get("parameters")),
+                    response=_scrub(entry.get("response")),
+                )
             )
-        )
+        except (ValidationError, TypeError, ValueError) as exc:
+            name = str(entry.get("function_id") or entry.get("package") or f"entry {index}")
+            notes.append(f"{name} came back in a shape this server cannot model: {exc}"[:300])
     return AgentFunctions(
         source=str(reply.result.get("source") or ""),
         count=int(reply.result.get("count") or len(functions)),
         functions=functions,
+        # Set when the phone had to fall back to the global AppSearch query.
+        # Without it "nothing is indexed" and "AppFunctionManager is broken" are
+        # the same answer: source=appsearch, count=0.
+        fallback_reason=str(reply.result.get("fallback_reason") or ""),
+        notes=notes,
     )
 
 
@@ -754,7 +821,6 @@ def agent_ui_tree(
     params = {
         "max_depth": max(1, min(int(max_depth), 100)),
         "max_nodes": max(1, min(int(max_nodes), 5000)),
-        "include_invisible": False,
     }
     reply = request(cfg, "ui.tree", params)
     if not reply.ok:
@@ -848,6 +914,11 @@ def _action(
     return AgentAction(
         dry_run=False,
         method=method,
+        # The phone calls this field "method" too, but it holds how the action
+        # was carried out, not what was called. It is renamed here rather than
+        # shadowing the JSON-RPC method name: "the tap succeeded and nothing
+        # happened" is almost always via=gesture.
+        via=str(reply.result.get("method") or ""),
         request_preview=line,
         ok=bool(reply.result.get("ok", True)),
         target=str(reply.result.get("target") or target),
@@ -1039,7 +1110,11 @@ def agent_apps(cfg: Config, launchable_only: bool = True) -> AgentApps:
 
 
 def agent_log(
-    cfg: Config, limit: int = 100, clear: bool = False, confirm: bool = False
+    cfg: Config,
+    limit: int = 100,
+    clear: bool = False,
+    confirm: bool = False,
+    since_utc: str = "",
 ) -> AgentLog:
     if clear:
         line = preview("log.clear", {"confirm": True})
@@ -1058,7 +1133,12 @@ def agent_log(
             )
         return AgentLog(request_preview=line, cleared=int(reply.result.get("cleared") or 0))
 
-    reply = request(cfg, "log.list", {"limit": max(1, min(int(limit), 500))})
+    list_params: dict = {"limit": max(1, min(int(limit), 500))}
+    if since_utc:
+        # The phone filters on ts_utc >= since_utc, so "what happened during that
+        # one action" is one call instead of reading the ring and diffing it.
+        list_params["since_utc"] = since_utc
+    reply = request(cfg, "log.list", list_params)
     if not reply.ok:
         return AgentLog(refused_reason=reply.problem(), error=reply.error_model())
     entries = []

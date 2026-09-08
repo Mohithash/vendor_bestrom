@@ -131,7 +131,7 @@ def base_handlers() -> dict:
         "agent.hello": lambda p: {"result": dict(HELLO)},
         "agent.auth": _auth_ok,
         "agent.pair": (
-            lambda p: {"result": {"token": SECRET, "expires_utc": "2026-09-08T12:00:00Z",
+            lambda p: {"result": {"token": SECRET, "code_expires_utc": "2026-09-08T12:00:00Z",
                                   "capabilities": HELLO["capabilities"]}}
             if p.get("code") == CODE
             else _err(-32002, "bad code")
@@ -308,6 +308,41 @@ def test_a_wrong_code_is_refused_and_stores_nothing(env) -> None:
     assert not agent_ops.state_path(cfg).exists()
 
 
+def test_no_pair_field_can_carry_the_code_back(env) -> None:
+    """The six digits are as good as the secret while the code is live."""
+    cfg, bridge, _recorder = env
+    bridge.handlers["agent.pair"] = lambda p: {
+        "result": {
+            "token": SECRET,
+            "code_expires_utc": "2026-09-08T12:00:00Z",
+            "capabilities": ["ui.tree"],
+        }
+    }
+    result = agent_ops.agent_pair(cfg, code=CODE)
+    assert CODE not in result.model_dump_json()
+    # And the same when the phone refuses: a refusal that echoed the code would
+    # put it in the transcript.
+    bridge.handlers["agent.pair"] = lambda p: _err(-32002, f"code {CODE} is wrong")
+    refused = agent_ops.agent_pair(cfg, code=CODE)
+    assert CODE not in refused.model_dump_json()
+
+
+def test_the_pairing_expiry_is_the_codes_not_the_pairings(env) -> None:
+    cfg, _bridge, _recorder = env
+    result = agent_ops.agent_pair(cfg, code=CODE)
+    assert result.code_expires_utc == "2026-09-08T12:00:00Z"
+    stored = json.loads(agent_ops.state_path(cfg).read_text(encoding="utf-8"))
+    assert stored["code_expires_utc"] == "2026-09-08T12:00:00Z"
+    assert "expires_utc" not in stored
+
+
+def test_the_state_directory_is_not_world_readable(env) -> None:
+    cfg, _bridge, _recorder = env
+    agent_ops.agent_pair(cfg, code=CODE)
+    mode = stat.S_IMODE(agent_ops.state_path(cfg).parent.stat().st_mode)
+    assert mode & 0o077 == 0, oct(mode)
+
+
 def test_a_code_that_is_not_six_digits_never_reaches_the_phone(env) -> None:
     cfg, bridge, recorder = env
     result = agent_ops.agent_pair(cfg, code="12345")
@@ -434,6 +469,33 @@ def test_a_confirmed_action_sends_confirm_to_the_phone_as_well(env) -> None:
     assert sent["params"] == {"x": 10, "y": 20, "confirm": True}
 
 
+def test_a_tap_reports_how_it_landed(env) -> None:
+    """method is what was called; via is how the phone carried it out."""
+    cfg, bridge, _recorder = env
+    pair(cfg)
+    node = agent_ops.agent_tap(cfg, x=1, y=2, dry_run=False, confirm=True)
+    assert node.method == "ui.tap"
+    assert node.via == "node"
+    bridge.handlers["ui.tap"] = lambda p: {"result": {"ok": True, "method": "gesture"}}
+    gesture = agent_ops.agent_tap(cfg, x=1, y=2, dry_run=False, confirm=True)
+    assert gesture.method == "ui.tap"
+    # "It said ok and nothing happened" is nearly always this.
+    assert gesture.via == "gesture"
+    bridge.handlers["ui.long_press"] = lambda p: {"result": {"ok": True, "method": "gesture"}}
+    held = agent_ops.agent_long_press(cfg, x=1, y=2, dry_run=False, confirm=True)
+    assert held.via == "gesture"
+
+
+def test_the_log_can_be_narrowed_to_one_window(env) -> None:
+    cfg, bridge, _recorder = env
+    pair(cfg)
+    agent_ops.agent_log(cfg, limit=5)
+    agent_ops.agent_log(cfg, limit=5, since_utc="2026-09-08T12:00:00Z")
+    sent = [r["params"] for r in bridge.seen if r["method"] == "log.list"]
+    assert sent[0] == {"limit": 5}
+    assert sent[1] == {"limit": 5, "since_utc": "2026-09-08T12:00:00Z"}
+
+
 def test_type_never_echoes_the_text(env, caplog) -> None:
     cfg, _bridge, _recorder = env
     pair(cfg)
@@ -547,6 +609,126 @@ def test_a_secure_window_is_not_an_empty_screen(env) -> None:
     assert tree.error.name == "SECURE_WINDOW"
 
 
+# -- app functions ------------------------------------------------------
+#
+# The phone flattens a GenericDocument to build this, so a property that is
+# repeated comes back as a JSON ARRAY. setDeviceStateItem takes two parameters,
+# which means anything that types these fields as an object raises rather than
+# returning — and it raises on exactly the functions this phase exists to
+# expose. The fake bridge used to answer functions: [], which is why nothing
+# caught it.
+
+MULTI_PARAM = {
+    "package": "com.android.settings",
+    "function_id": "setDeviceStateItem",
+    "enabled": True,
+    "description": "Set one device state item",
+    "schema": {"category": "device_state", "name": "setDeviceStateItem", "version": 2},
+    "parameters": [
+        {"name": "itemId", "dataType": 5, "isRequired": True},
+        {"name": "value", "dataType": 5, "isRequired": True},
+    ],
+    "response": [{"name": "success", "dataType": 6}],
+}
+
+# An older build of the app collapsed a one-element array to the object itself.
+# Both shapes have to survive, and both have to come back as a list, so the type
+# does not change with the number of parameters.
+SINGLE_PARAM = {
+    "package": "com.android.settings",
+    "function_id": "getBatteryDeviceState",
+    "schema": {"category": "device_state", "name": "getBatteryDeviceState", "version": 2},
+    "parameters": {"name": "includeHistory", "dataType": 6},
+}
+
+
+def test_a_multi_parameter_function_is_returned_not_raised(env) -> None:
+    cfg, bridge, _recorder = env
+    pair(cfg)
+    bridge.handlers["functions.list"] = lambda p: {
+        "result": {
+            "source": "searchAppFunctions",
+            "count": 2,
+            "functions": [MULTI_PARAM, SINGLE_PARAM],
+        }
+    }
+    result = agent_ops.agent_functions(cfg)
+    assert result.refused_reason == ""
+    assert result.notes == []
+    assert [f.function_id for f in result.functions] == [
+        "setDeviceStateItem",
+        "getBatteryDeviceState",
+    ]
+    assert len(result.functions[0].parameters) == 2
+    assert result.functions[0].parameters[0]["name"] == "itemId"
+    assert result.functions[0].response == [{"name": "success", "dataType": 6}]
+    assert result.functions[1].parameters == [{"name": "includeHistory", "dataType": 6}]
+    assert result.functions[1].response is None
+
+
+def test_one_unmodellable_function_becomes_a_note(env) -> None:
+    """One odd entry costs that entry, not the whole call."""
+    cfg, bridge, _recorder = env
+    pair(cfg)
+    bridge.handlers["functions.list"] = lambda p: {
+        "result": {
+            "source": "searchAppFunctions",
+            "count": 2,
+            "functions": [{"function_id": "brokenOne", "parameters": 7}, MULTI_PARAM],
+        }
+    }
+    result = agent_ops.agent_functions(cfg)
+    assert [f.function_id for f in result.functions] == ["setDeviceStateItem"]
+    assert len(result.notes) == 1
+    assert "brokenOne" in result.notes[0]
+
+
+def test_the_appsearch_fallback_reason_is_surfaced(env) -> None:
+    cfg, bridge, _recorder = env
+    pair(cfg)
+    bridge.handlers["functions.list"] = lambda p: {
+        "result": {
+            "source": "appsearch",
+            "count": 0,
+            "functions": [],
+            "fallback_reason": "AppFunctionManager was null",
+        }
+    }
+    result = agent_ops.agent_functions(cfg)
+    # Without the reason, "nothing is indexed" and "the manager is broken" are
+    # the same answer: source=appsearch, count=0.
+    assert result.fallback_reason == "AppFunctionManager was null"
+    assert result.count == 0
+
+
+# -- deadlines ----------------------------------------------------------
+
+
+def test_the_slow_calls_ask_for_a_longer_deadline(env, monkeypatch) -> None:
+    """functions.list can take 30 s on the phone; the default socket wait is 30."""
+    cfg, _bridge, _recorder = env
+    pair(cfg)
+    asked: dict[str, int | None] = {}
+
+    def record(cfg_, method, params=None, *, authenticate=True, timeout_s=None):
+        asked[method] = timeout_s
+        return agent_ops.Reply(result={"ok": True})
+
+    monkeypatch.setattr(agent_ops, "request", record)
+    agent_ops.agent_functions(cfg)
+    agent_ops.agent_execute(
+        cfg, "com.android.settings", "setDeviceStateItem",
+        timeout_s=cfg.agent.max_request_timeout_s, dry_run=False, confirm=True,
+    )
+    assert asked["functions.list"] > cfg.agent.request_timeout_s
+    # The +5 the execute tool adds has to survive the socket clamp, or at the
+    # top of the range the host reports a socket timeout instead of the phone's
+    # own -32014.
+    ceiling = cfg.agent.max_request_timeout_s + 5
+    assert asked["functions.execute"] == ceiling
+    assert agent_ops.socket_deadline(cfg, ceiling) == ceiling
+
+
 # -- evidence -----------------------------------------------------------
 
 
@@ -603,6 +785,20 @@ def test_out_dir_cannot_escape_the_evidence_root(env) -> None:
     assert "outside the allowlist" in outside.refused_reason
 
 
+def test_out_dir_is_confined_to_the_agents_own_root(env, tmp_path) -> None:
+    """Not merely to evidence_dir, which is the whole crash-sweep directory."""
+    cfg, _bridge, _recorder = env
+    # The allowlist is the real tree in this fixture, so widen it to tmp_path:
+    # what is under test is the second, narrower check.
+    cfg = replace(cfg, safety=replace(cfg.safety, allowlist_roots=(tmp_path,)))
+    inside = agent_ops.evidence_root(cfg, str(cfg.agent.evidence_root / "t12"))
+    assert inside == cfg.agent.evidence_root / "t12"
+    with pytest.raises(ValueError, match="must live under"):
+        agent_ops.evidence_root(cfg, str(cfg.agent.evidence_dir))
+    with pytest.raises(ValueError, match=str(cfg.agent.evidence_root)):
+        agent_ops.evidence_root(cfg, str(cfg.agent.evidence_dir / "sweep-2026"))
+
+
 # -- the closed method set ----------------------------------------------
 
 
@@ -614,6 +810,23 @@ def test_a_desynced_reply_is_reported_not_returned(env) -> None:
     result = agent_ops.agent_log(cfg)
     assert "out of step" in result.refused_reason
     assert result.total == 0
+
+
+def test_an_error_the_bridge_could_not_attribute_keeps_its_code(env) -> None:
+    """id:null is how the bridge answers a frame it could not parse.
+
+    The connection cap and the over-long-line refusal are the same shape. They
+    are the frames that matter most when something is already wrong, so the real
+    code has to survive rather than becoming a desync message.
+    """
+    cfg, bridge, _recorder = env
+    pair(cfg)
+    bridge.handlers["log.list"] = lambda p: {"id": None, "error": {"code": -32603, "message": "too many connections"}}
+    result = agent_ops.agent_log(cfg)
+    assert "out of step" not in result.refused_reason
+    assert result.error is not None
+    assert result.error.code == -32603
+    assert result.error.message == "too many connections"
 
 
 def test_there_is_no_arbitrary_method_passthrough(env) -> None:

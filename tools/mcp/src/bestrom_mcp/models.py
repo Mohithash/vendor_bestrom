@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class CcacheStats(BaseModel):
@@ -289,13 +289,25 @@ class AgentStatus(BaseModel):
 class AgentPair(BaseModel):
     paired: bool = False
     capabilities: list[str] = Field(default_factory=list)
-    expires_utc: str = ""
+    # The expiry of the six-digit CODE, not of the pairing. The code is single
+    # use and dies after ten minutes; the pairing it bought lasts until the
+    # bridge stops, which a reboot or the idle timeout also does.
+    code_expires_utc: str = ""
     stored: bool = False
     refused_reason: str = ""
     error: AgentBridgeError | None = None
 
 
 class AgentFunction(BaseModel):
+    """One app function as the phone's metadata flattener emits it.
+
+    ``parameters`` and ``response`` are JSON arrays of objects — one object per
+    parameter — or absent. The phone keeps a repeated property repeated even at
+    length one, so the type does not change between a one-parameter and a
+    two-parameter function. A bare object is still accepted and wrapped, because
+    an older build of the app collapsed a single-element array to the object.
+    """
+
     package: str = ""
     function_id: str = ""
     enabled: bool = True
@@ -303,14 +315,30 @@ class AgentFunction(BaseModel):
     schema_category: str = ""
     schema_name: str = ""
     schema_version: int = 0
-    parameters: dict[str, Any] = Field(default_factory=dict)
-    response: dict[str, Any] = Field(default_factory=dict)
+    parameters: list[dict[str, Any]] | None = None
+    response: list[dict[str, Any]] | None = None
+
+    @field_validator("parameters", "response", mode="before")
+    @classmethod
+    def _as_list(cls, value: Any) -> Any:
+        if value is None or value == {} or value == []:
+            return None
+        if isinstance(value, dict):
+            return [value]
+        return value
 
 
 class AgentFunctions(BaseModel):
     source: str = ""
     count: int = 0
     functions: list[AgentFunction] = Field(default_factory=list)
+    # Why the phone fell back to the global AppSearch query. Empty means it did
+    # not: with it empty and count 0, nothing is indexed. With it set, the
+    # AppFunctionManager path failed and "no functions" says nothing.
+    fallback_reason: str = ""
+    # One line per entry the phone sent that this server could not model. A bad
+    # entry is dropped and named here rather than failing the whole call.
+    notes: list[str] = Field(default_factory=list)
     refused_reason: str = ""
     error: AgentBridgeError | None = None
 
@@ -347,7 +375,12 @@ class AgentTree(BaseModel):
 
 class AgentAction(BaseModel):
     dry_run: bool = True
+    # The JSON-RPC method name that was sent, e.g. "ui.tap".
     method: str = ""
+    # How the phone carried it out: "node" through ACTION_CLICK on the node, or
+    # "gesture" through a synthetic touch at its centre. A tap that "succeeded"
+    # and changed nothing is nearly always a gesture that missed.
+    via: str = ""
     request_preview: str = ""
     ok: bool = False
     target: str = ""
