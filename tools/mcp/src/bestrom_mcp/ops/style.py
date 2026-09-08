@@ -39,6 +39,18 @@ KNOWN_AREAS = {
     "sepolicy", "system", "tools", "vendor", "vendor/bestrom", "vendor/voltage",
 }
 
+# Repo-local area names. LineageOS names the area after the module or the
+# directory inside the repository being committed to ("Settings:", "base:",
+# "peridot:"), not after its path in the combined tree, and the pushed history
+# already reads that way. Kept apart from KNOWN_AREAS so the list of tree paths
+# above stays a list of tree paths.
+SHORT_AREAS = {
+    "AndroidBlackTheme", "Freezer", "Launcher3", "LogViewer", "Powerhub",
+    "Preinstaller", "Settings", "SettingsLib", "SetupWizard", "SystemUI",
+    "Updater", "base", "check_boot_jars", "config", "fonts", "gen_build_prop",
+    "peridot", "recovery", "soong",
+}
+
 # Release subjects written by the publish chain; they are deliberately not
 # "area: Sentence-case".
 RELEASE_SUBJECT_RE = re.compile(r"^(\d+: \S+|docs: latest release card \(.+\))$")
@@ -142,12 +154,13 @@ def commit_message_check(text: str, strict: bool = False) -> StyleReport:
         area = match.group(1)
         summary = match.group(2)
         if not is_release_subject:
-            if area not in KNOWN_AREAS:
+            if area not in KNOWN_AREAS and area not in SHORT_AREAS:
                 violations.append(
                     _violation(
                         "subject-area-unknown", "error", 1,
-                        f"area {area!r} is not a path prefix in this tree",
-                        "use the directory the change lives in, e.g. vendor or frameworks/base",
+                        f"area {area!r} is not a tree path or a module in this tree",
+                        "use the directory or module the change lives in, "
+                        "e.g. vendor, frameworks/base or Settings",
                     )
                 )
             if summary[:1].islower():

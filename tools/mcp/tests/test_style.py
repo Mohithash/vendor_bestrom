@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from bestrom_mcp.ops.style import commit_message_check
+from bestrom_mcp.ops.style import SHORT_AREAS, commit_message_check
 
 GOOD = [
     (
@@ -27,6 +27,8 @@ GOOD = [
     # the "area: Sentence-case" form and must not be flagged.
     "17: 3.0-peridot-20260907-1010-OFFICIAL\n\nSELinux fsck_untrusted stock parity.\n",
     "docs: latest release card (3.0-peridot-20260907-1010-OFFICIAL)\n\nNew package name and size.\n",
+    # Repo-local area, the LineageOS form used throughout the pushed history.
+    "Settings: Drop the unused Powerhub icon\n\nNothing references it.\n",
 ]
 
 
@@ -110,6 +112,17 @@ def test_bad_messages_flagged(name: str, message: str, expected: tuple[str, str]
     report = commit_message_check(message)
     assert not report.ok
     assert expected in [(v.rule_id, v.severity) for v in report.violations]
+
+
+@pytest.mark.parametrize("area", sorted(SHORT_AREAS))
+def test_repo_local_areas_are_accepted(area: str) -> None:
+    """A commit inside one repo names its own module, not the tree path."""
+    report = commit_message_check(f"{area}: Change something\n\nBecause it was wrong.\n")
+    assert report.ok, [v.model_dump() for v in report.violations]
+
+
+def test_an_invented_area_is_still_rejected() -> None:
+    assert ("subject-area-unknown", "error") in _rules("quantum: Add a thing\n\nBody.\n")
 
 
 def test_subject_length_warning_is_not_an_error() -> None:

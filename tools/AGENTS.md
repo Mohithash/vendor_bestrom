@@ -164,7 +164,8 @@ LineageOS style. The history is read by humans.
 Rules (MCP: `commit_message_check`):
 
 * Subject `area: Sentence-case summary`, where `area` is a real path prefix in
-  the tree (`vendor`, `device`, `frameworks/base`, `sepolicy`, `docs`, …).
+  the tree (`vendor`, `device`, `frameworks/base`, `sepolicy`, `docs`, …) or
+  the module the change lives in (`Settings`, `Launcher3`, `base`, `peridot`).
 * Subject <= 50 characters preferred, 72 hard. No trailing period.
 * Blank second line. Body 1-6 lines, each <= 72 characters.
 * Plain English. No emoji. No AI vocabulary — no "comprehensive", "robust",
