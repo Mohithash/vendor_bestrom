@@ -41,6 +41,28 @@ max_timeout_s = 300
 evidence_dir = "/serverhive1/sal/bootloop-logs/crash-sweep"
 allow_remote_sideload = false
 
+[agent]
+# The Agent mode bridge on the phone (com.bestrom.agent). It is off until the
+# user turns it on in Settings > Custom Tweaks > Agent mode, and it does not
+# survive a reboot.
+#
+# Nothing here is a credential. Pairing hands this server a secret the phone
+# generated; it is written to <state_dir>/agent-pairing.json with mode 0600 and
+# no tool prints it, returns it or accepts it as an argument.
+port = 8765
+socket = "bestrom_agent"
+package = "com.bestrom.agent"
+connect_timeout_s = 5
+request_timeout_s = 30
+max_request_timeout_s = 120
+# Empty means: use [device] evidence_dir. Screenshots and spilled UI trees land
+# in <evidence_dir>/<evidence_subdir>/.
+evidence_dir = ""
+evidence_subdir = "agent"
+state_file = "agent-pairing.json"
+# A tree bigger than this comes back as a file path instead of inline nodes.
+inline_node_limit = 200
+
 [release]
 chains = ["sweep", "aperture", "miuicamera", "hardening"]
 sourceforge_project = "bestrom"

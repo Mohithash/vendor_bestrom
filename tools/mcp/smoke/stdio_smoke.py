@@ -30,6 +30,26 @@ HERE = Path(__file__).resolve().parent
 SERVER_DIR = HERE.parent
 PROTOCOL = "2025-06-18"
 
+# tools/list order is part of the contract: a client caches it and this test
+# asserts on it. The agent block sits between device_sideload and release_prepare.
+AGENT_TOOLS = [
+    "device_agent_status",
+    "device_agent_pair",
+    "device_agent_functions",
+    "device_agent_execute",
+    "device_agent_ui_tree",
+    "device_agent_tap",
+    "device_agent_long_press",
+    "device_agent_swipe",
+    "device_agent_type",
+    "device_agent_key",
+    "device_agent_screenshot",
+    "device_agent_launch",
+    "device_agent_apps",
+    "device_agent_log",
+    "device_agent_stop",
+]
+
 failures: list[str] = []
 skipped: list[str] = []
 checks = 0
@@ -171,7 +191,11 @@ def main() -> int:
                 if ann.get(key)
             )
             print(f"  {tool['name']:22s} [{flags:4s}] {ann.get('title', '')}")
-        check(len(tools) == 19, f"19 tools registered (got {len(tools)})")
+        check(len(tools) == 34, f"34 tools registered (got {len(tools)})")
+        check(
+            [t["name"] for t in tools][14:29] == AGENT_TOOLS,
+            "the fifteen device_agent tools are registered in order",
+        )
         check(all(t.get("annotations", {}).get("title") for t in tools), "every tool has a title")
         check(all(t.get("outputSchema") for t in tools), "every tool has an outputSchema")
         check(
@@ -387,6 +411,22 @@ def main() -> int:
         data = structured(call(client, "release_publish", {"chain": "wildcat"}))
         print(f"  release_publish unknown chain: {data.get('refused_reason')}")
         check("unknown chain" in (data.get("refused_reason") or ""), "unknown chain refused")
+
+        data = structured(call(client, "device_agent_tap", {"x": 100, "y": 100}))
+        print(f"  device_agent_tap: {data.get('refused_reason')}")
+        check("dry_run" in (data.get("refused_reason") or ""), "device_agent_tap refuses by default")
+        check("ui.tap" in (data.get("request_preview") or ""), "the refusal still shows the request")
+
+        data = structured(
+            call(client, "device_agent_type", {"text": "hunter2", "dry_run": False, "confirm": False})
+        )
+        print(f"  device_agent_type: {data.get('refused_reason')}")
+        check("confirm=true" in (data.get("refused_reason") or ""), "device_agent_type refuses without confirm")
+        check("hunter2" not in json.dumps(data), "the typed text is not echoed anywhere")
+
+        data = structured(call(client, "device_agent_log", {"clear": True}))
+        print(f"  device_agent_log clear: {data.get('refused_reason')}")
+        check(bool(data.get("refused_reason")), "device_agent_log refuses to clear without confirm")
 
         data = structured(call(client, "build_cancel", {"job_id": "bestrom-build-nope"}))
         print(f"  build_cancel: {data.get('refused_reason')}")

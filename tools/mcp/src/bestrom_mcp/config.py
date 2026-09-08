@@ -93,6 +93,33 @@ class DeviceCfg:
 
 
 @dataclass(frozen=True)
+class AgentCfg:
+    """The Agent mode bridge on the phone.
+
+    Nothing here is a credential. The pairing secret the phone hands out lives
+    in the state directory with mode 0600 and is never printed, returned or
+    configured.
+    """
+
+    port: int = 8765
+    socket: str = "bestrom_agent"
+    package: str = "com.bestrom.agent"
+    connect_timeout_s: int = 5
+    request_timeout_s: int = 30
+    max_request_timeout_s: int = 120
+    # Empty in the TOML means "use [device] evidence_dir"; it is resolved to a
+    # real path at load time so no tool has to know about the fallback.
+    evidence_dir: Path = Path("/serverhive1/sal/bootloop-logs/crash-sweep")
+    evidence_subdir: str = "agent"
+    state_file: str = "agent-pairing.json"
+    inline_node_limit: int = 200
+
+    @property
+    def evidence_root(self) -> Path:
+        return self.evidence_dir / self.evidence_subdir if self.evidence_subdir else self.evidence_dir
+
+
+@dataclass(frozen=True)
 class ReleaseCfg:
     chains: tuple[str, ...] = ("sweep", "aperture", "miuicamera", "hardening")
     sourceforge_project: str = "bestrom"
@@ -118,6 +145,15 @@ CONFIRM_REQUIRED_TOOLS = (
     "build_cancel",
     "device_sideload",
     "release_publish",
+    "device_agent_execute",
+    "device_agent_tap",
+    "device_agent_long_press",
+    "device_agent_swipe",
+    "device_agent_type",
+    "device_agent_key",
+    "device_agent_launch",
+    "device_agent_log",
+    "device_agent_stop",
 )
 
 # A tree root has to look like one. Without this, a client that passes an
@@ -138,6 +174,7 @@ class Config:
     build: BuildCfg = field(default_factory=BuildCfg)
     verify: VerifyCfg = field(default_factory=VerifyCfg)
     device: DeviceCfg = field(default_factory=DeviceCfg)
+    agent: AgentCfg = field(default_factory=AgentCfg)
     release: ReleaseCfg = field(default_factory=ReleaseCfg)
     safety: SafetyCfg = field(default_factory=SafetyCfg)
     push_projects: tuple[str, ...] = ()
@@ -207,6 +244,20 @@ class Config:
                 "evidence_dir": str(self.device.evidence_dir),
                 "allow_remote_sideload": self.device.allow_remote_sideload,
             },
+            "agent": {
+                "port": self.agent.port,
+                "socket": self.agent.socket,
+                "package": self.agent.package,
+                "connect_timeout_s": self.agent.connect_timeout_s,
+                "request_timeout_s": self.agent.request_timeout_s,
+                "max_request_timeout_s": self.agent.max_request_timeout_s,
+                "evidence_root": str(self.agent.evidence_root),
+                # The path of the pairing state file, never its contents. It is
+                # mode 0600 and nothing in this server reads it back out to a
+                # caller.
+                "pairing_state_file": str(self.state_dir / self.agent.state_file),
+                "inline_node_limit": self.agent.inline_node_limit,
+            },
             "release": {
                 "chains": list(self.release.chains),
                 "sourceforge_project": self.release.sourceforge_project,
@@ -262,7 +313,7 @@ def _merge(base: dict[str, Any], overlay: dict[str, Any]) -> dict[str, Any]:
 
 def _env_overlay(environ: dict[str, str]) -> dict[str, Any]:
     """BESTROM_MCP_<SECTION>_<KEY> -> {"section": {"key": value}}."""
-    sections = {"tree", "build", "verify", "device", "release", "push", "safety"}
+    sections = {"tree", "build", "verify", "device", "agent", "release", "push", "safety"}
     overlay: dict[str, Any] = {}
     for name, raw in environ.items():
         if not name.startswith("BESTROM_MCP_"):
@@ -389,6 +440,30 @@ def load_config(
         ),
     )
 
+    a = dict(data.get("agent", {}))
+    agent = AgentCfg(
+        port=_as_int(a.get("port", AgentCfg.port), "agent.port"),
+        socket=str(a.get("socket", AgentCfg.socket)),
+        package=str(a.get("package", AgentCfg.package)),
+        connect_timeout_s=_as_int(
+            a.get("connect_timeout_s", AgentCfg.connect_timeout_s), "agent.connect_timeout_s"
+        ),
+        request_timeout_s=_as_int(
+            a.get("request_timeout_s", AgentCfg.request_timeout_s), "agent.request_timeout_s"
+        ),
+        max_request_timeout_s=_as_int(
+            a.get("max_request_timeout_s", AgentCfg.max_request_timeout_s),
+            "agent.max_request_timeout_s",
+        ),
+        # Empty means "wherever device evidence goes", so the two never drift.
+        evidence_dir=Path(str(a.get("evidence_dir") or device.evidence_dir)),
+        evidence_subdir=str(a.get("evidence_subdir", AgentCfg.evidence_subdir)),
+        state_file=str(a.get("state_file", AgentCfg.state_file)),
+        inline_node_limit=_as_int(
+            a.get("inline_node_limit", AgentCfg.inline_node_limit), "agent.inline_node_limit"
+        ),
+    )
+
     r = dict(data.get("release", {}))
     release = ReleaseCfg(
         chains=_as_list(r.get("chains", ReleaseCfg.chains)),
@@ -426,6 +501,7 @@ def load_config(
         build=build,
         verify=verify,
         device=device,
+        agent=agent,
         release=release,
         safety=safety,
         push_projects=push_projects,
@@ -437,6 +513,7 @@ def load_config(
 
 __all__ = [
     "CONFIRM_REQUIRED_TOOLS",
+    "AgentCfg",
     "Config",
     "ConfigError",
     "PathNotAllowed",

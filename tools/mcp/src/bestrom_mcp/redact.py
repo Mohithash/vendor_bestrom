@@ -53,6 +53,13 @@ _PATTERNS: list[tuple[re.Pattern[str], str]] = [
         re.compile(r"(https?://)x-access-token:[^@\s]+@"),
         r"\1" + MASK + "@",
     ),
+    # The Agent mode pairing secret: base64url of 32 random bytes, 43 chars.
+    # The key=value rule below misses it in JSON, where the key carries quotes
+    # and the rule's "\b(token)" then runs into them.
+    (
+        re.compile(r"([\"']?token[\"']?\s*[=:]\s*[\"']?)[A-Za-z0-9_-]{43}", re.IGNORECASE),
+        r"\1" + MASK,
+    ),
     # key=value secrets on a command line or in an env dump.
     (
         re.compile(
