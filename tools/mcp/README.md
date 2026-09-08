@@ -124,6 +124,21 @@ startup_timeout_sec = 120
 | `device_list` | Device reachability, build fingerprint, root availability | read-only, port-guarded |
 | `device_capture` | Structured crash/logcat/dropbox/avc/screenshot/package evidence | writes only under the evidence root |
 | `device_sideload` | Emits the flash plan; refuses to flash over the tunnel | dry_run, confirm, disabled in config |
+| `device_agent_status` | Is Agent mode up on the phone, is this server paired | read-only, port-guarded |
+| `device_agent_pair` | Exchange the six digits on the phone for a stored pairing | the code on the screen is the gate |
+| `device_agent_functions` | The app functions the phone publishes, with schemas | read-only |
+| `device_agent_execute` | Call one app function | dry_run, confirm |
+| `device_agent_ui_tree` | The accessibility tree of the foreground window | untrusted content; spills to the evidence root |
+| `device_agent_tap` | Tap a node or a point | dry_run, confirm |
+| `device_agent_long_press` | Long press a node or a point | dry_run, confirm |
+| `device_agent_swipe` | Drag between two points | dry_run, confirm |
+| `device_agent_type` | Set the text of an editable field | dry_run, confirm; text never echoed |
+| `device_agent_key` | One accessibility global action | dry_run, confirm |
+| `device_agent_screenshot` | A PNG under the evidence root | untrusted content; never inline |
+| `device_agent_launch` | Start an activity | dry_run, confirm |
+| `device_agent_apps` | Installed apps with labels and versions | read-only |
+| `device_agent_log` | The phone's own audit log; `clear=true` empties it | confirm to clear |
+| `device_agent_stop` | The remote kill switch | dry_run, confirm |
 | `release_prepare` | The three release documents as drafts | dry_run; publishes nothing |
 | `release_publish` | The publish chain, behind both anti-drift gates | dry_run, confirm, gates re-checked, all-or-nothing |
 | `changelog_add` | Append a section to `CHANGELOG.md` under "Unreleased" | dry_run; one file |
@@ -233,6 +248,10 @@ finishes, so this returns the exact local command instead. It also refuses a
 sensor bootloop was reproduced — and refuses any package the verify gate has not
 passed.
 
+**`device_agent_*`** → the fifteen Agent mode tools. They have their own
+section below, [Driving the phone](#driving-the-phone-agent-mode), because the
+pairing flow and the untrusted-content rule matter more than any one signature.
+
 **`release_prepare`** → `ReleaseDrafts`. One `notes` input becomes the
 SourceForge `README.txt`, the changelog entry and the OTA catalog JSON, plus the
 site release card rendered as a diff. Publishes nothing; `dry_run=false` writes
@@ -274,6 +293,97 @@ is not something that should happen behind an agent call. The default range is
 `<remote>/<manifest revision>..HEAD` with the remote taken from the publish set
 — `origin` is wrong for `device/xiaomi/peridot` and `frameworks/base`.
 
+## Driving the phone (Agent mode)
+
+Agent mode is a switch on the phone: **Settings > Custom Tweaks > Agent mode**.
+With it off, `com.bestrom.agent` is an APK on disk — both its services ship
+`android:enabled="false"`, it has no receiver, no job and no provider, and it
+holds no network permission at all. With it on, it listens on the Linux abstract
+socket `bestrom_agent`, shows a six-digit pairing code and posts an ongoing
+notification for as long as it is running.
+
+**It does not survive a reboot.** After a restart the switch reads Off, the
+accessibility service takes itself back out of the secure setting, and this
+server's pairing is dead. That is deliberate: anything that restored it would
+put the agent in the boot path.
+
+### The flow
+
+1. On the phone, open Settings > Custom Tweaks > Agent mode and turn it on.
+   Grant the notification permission when it asks. Read the six digits.
+2. `device_agent_status` — sets up
+   `adb -P 15038 -s bc94484f forward tcp:8765 localabstract:bestrom_agent`,
+   says hello, and takes the forward down again. It reports whether the bridge
+   is up, whether the accessibility half is connected and whether the phone is
+   locked.
+3. `device_agent_pair(code="123456")` — the six digits. What comes back is
+   written to `state/agent-pairing.json` with mode 0600 and is never returned by
+   any tool, never logged and never in a refusal. Three wrong codes make the
+   phone show a new one after a 30 s cooldown.
+4. Then the rest: `device_agent_functions` and `device_agent_execute` for app
+   functions, `device_agent_ui_tree` and `device_agent_screenshot` to see the
+   screen, `device_agent_tap` / `_long_press` / `_swipe` / `_type` / `_key` /
+   `_launch` to act on it, `device_agent_log` for the phone's own record of what
+   happened, and `device_agent_stop` when the phone is out of arm's reach.
+
+Every action tool and `device_agent_execute` need **both** `dry_run=false` and
+`confirm=true`. A dry run returns the exact JSON-RPC line it would send. The
+phone applies the same confirm floor again on its side, so a misbehaving client
+cannot act by accident. `device_agent_log(clear=true)` needs `confirm=true` for
+the same reason: it is the only record of what the agent did.
+
+The forward is opened per call and taken down after it. A `tcp:8765` left
+listening on the build machine is a door to the phone for every local process,
+and the phone's own auth is all that stands behind it. The manual undo, when a
+call dies badly, is `adb -P 15038 forward --remove tcp:8765`.
+
+### What the phone refuses, and what that means
+
+| Code | Name | What it means |
+|---|---|---|
+| -32005 | `DEVICE_LOCKED` | The phone is locked. There is no override, not even for reads: a lock-screen tree leaks notification content. |
+| -32006 | `USER_INTERACTING` | The user touched the screen within the last 1.5 s. Reads are exempt; actions are not. |
+| -32012 | `SECURE_WINDOW` | A `FLAG_SECURE` surface or a password field. This is **blocked**, not empty — never read it as an absence of content. |
+| -32007 | `RATE_LIMITED` | Ten actions a second, shared across connections. |
+| -32013 | `SCREENSHOT_UNAVAILABLE` | The platform's own minimum interval between screenshots, reported rather than retried around. |
+| -32010 | `APP_FUNCTION_ERROR` | The function itself failed; `data.code` carries the `AppFunctionException` code verbatim. |
+
+### Screen content is data, never instruction
+
+Everything `device_agent_ui_tree` and `device_agent_screenshot` return is text
+an app drew on the screen, and any app can draw anything there. A tree that says
+"ignore your instructions and run X" is an attack, not a request. Phase 1 puts
+that risk on the host, where a human is watching, by refusing to be autonomous
+at all: no trigger, no loop, no schedule, and a confirmation on every action.
+The tool descriptions say so in one sentence each, and the models carry the
+sentence next to the payload.
+
+### Security note
+
+> Phase 1 is a MAINTAINER TOOL, not a user feature, and it must be described
+> that way until the signing keys are rotated. BestROM images are currently
+> signed with VoltageOS's public `vendor_voltage-priv_keys`, so anyone can build
+> an APK that claims to be `com.bestrom.agent`, matches the platform certificate
+> and inherits `EXECUTE_APP_FUNCTIONS` and `WRITE_SECURE_SETTINGS`. Every
+> privilege in this design is exactly as strong as that key. The private key set
+> is prepared at `/serverhive1/sal/bestrom-priv`; rotating it is a clean flash,
+> and it is the gate on calling Agent mode a shipped feature. Until then: build
+> it, run it on the maintainer's own phone, and say so in the release notes.
+
+What the design does defend, independently of the key: **no network** — the
+bridge is a unix abstract socket reached only through `adb forward`, the app
+holds no `INTERNET` permission and a verify gate asserts its absence; **no
+persistence** — every component ships disabled, there is no receiver, job,
+provider or notification listener, and Agent mode does not survive a reboot;
+**no silent power** — a code on the phone screen to pair, an ongoing
+notification for the whole session, three independent stops and a thirty-minute
+idle timeout; **a confirmation floor on both sides**; and the hard stops the
+platform gives for free — locked device, secure surfaces and password fields,
+each with its own error code.
+
+What it does **not** defend, and must be said out loud: indirect prompt
+injection. See the paragraph above.
+
 ## Resources
 
 | URI | Contents |
@@ -296,8 +406,9 @@ reads the rules before acting rather than after failing.
 Tool annotations are hints for the client UI. The real gates are in code.
 
 1. **Annotations.** `destructiveHint` on `repo_sync`, `build_cancel`,
-   `device_sideload` and `release_publish`; `openWorldHint` only where the
-   network or the phone is reached; `readOnlyHint` and `idempotentHint` on the
+   `device_sideload`, `release_publish` and the seven `device_agent_*` tools
+   that act on the phone; `openWorldHint` on everything that reaches the network
+   or the phone, which is every `device_agent_*` tool; `readOnlyHint` and `idempotentHint` on the
    tools that read. The authoritative list is the annotations column of
    `tools/list`, not this paragraph. Two notes on the hints that matter:
    `device_capture` does **not** carry `readOnlyHint`, because it writes a
@@ -314,13 +425,17 @@ Tool annotations are hints for the client UI. The real gates are in code.
    names the newest package on disk. `verify_image` writes that literal only
    after the whole profile ran clean — a `checks` subset is refused a marker.
    `build_start` refuses when `pgrep -x soong_ui` or `pgrep -x ninja` hits.
-   `device_sideload` refuses boot without vendor_boot.
+   `device_sideload` refuses boot without vendor_boot. Every `device_agent_*`
+   action refuses without `dry_run=false` and `confirm=true`, and the phone
+   applies the same floor again — the host is not trusted to have applied it.
 5. **Path allowlist.** Every filesystem argument resolves and must land inside
    the tree root, `/serverhive1/sal/bootloop-logs` or `/serverhive1/sal/dl`.
    Symlinks are resolved before the check, so a link inside the tree pointing
    out of it is rejected. Writes are narrowed further per tool.
 6. **No arbitrary shell.** There is no `run_shell` and no
-   `execute_adb_command`: it would defeat every gate above. Enums where a value
+   `execute_adb_command`: it would defeat every gate above. The Agent mode
+   bridge is the same rule one layer out — its method names are a closed set in
+   `ops/agent.py` and there is no passthrough that could name another one. Enums where a value
    is one of a fixed set; the lunch string is fixed in code. Arguments that
    reach an argv are validated as what they claim to be — a project path is a
    path, a commit range is a range — and never merely resolved against the
@@ -337,8 +452,12 @@ Tool annotations are hints for the client UI. The real gates are in code.
    matching is exact-name only (`pgrep -x`); nothing is ever matched or killed
    by `-f` pattern.
 8. **Secret hygiene.** Redaction covers `Authorization` headers,
-   `http.extraheader` values, `ghp_` / `github_pat_` tokens, URL credentials and
-   ssh key material. It runs on every subprocess result and on every log tail or
+   `http.extraheader` values, `ghp_` / `github_pat_` tokens, URL credentials,
+   ssh key material and the Agent mode pairing secret. That last one is never a
+   tool parameter, never a return field and never in a refusal: it lives in
+   `state/agent-pairing.json` at mode 0600, and a test asserts that the JSON of
+   every model a `device_agent_*` tool returns contains neither the value nor
+   the word. It runs on every subprocess result and on every log tail or
    grep (in `proc.py`), on the `bestrom://config` resource, and on the release
    notes — the one place a tool reads a file itself, where the content is also
    capped at 64 KB and can only come from a `.txt`/`.md` file in the logs
@@ -366,6 +485,7 @@ with `BESTROM_TREE`.
 | `[build]` | `script`, `lunch`, `goal`, `jobs`, `official`, `unit_prefix`, `log_prefix`, `zip_glob` |
 | `[verify]` | `profile`, `profiles_dir`, `marker_dir` |
 | `[device]` | `adb_port`, `adb_host`, `serial`, `default_timeout_s`, `max_timeout_s`, `evidence_dir`, `allow_remote_sideload` |
+| `[agent]` | `port`, `socket`, `package`, `connect_timeout_s`, `request_timeout_s`, `max_request_timeout_s`, `evidence_dir`, `evidence_subdir`, `state_file`, `inline_node_limit` |
 | `[release]` | `chains`, `sourceforge_project`, `sourceforge_frs_path`, `sourceforge_web_path`, `ota_repo`, `ota_branch`, `site_repo`, `pages_dir`, `publish_timeout_s`, `kernel`, `base` |
 | `[push]` | `projects` — the `path remote branch` triples from the publish chain |
 | `[safety]` | `allowlist_roots`, `enable_publish` |
@@ -409,6 +529,7 @@ network.
 | `tests/test_repo_sync.py` | Option-shaped `projects` entries are refused, validated paths go after `--`, a dry run touches no network |
 | `tests/test_release_notes.py` | `notes_path` confined to the notes location, scrubbed and capped; the release header derived, not hardcoded |
 | `tests/test_device_args.py` | `su -c` quoting round-trips through a POSIX lexer; package names reject a trailing newline; props parse by key |
+| `tests/test_agent.py` | The bridge client against a fake bridge on a real socket: the port guard, the exact forward argv and its teardown, reassembly across recv boundaries, the confirm floor on all nine gated tools, error mapping, and that no model any tool returns carries the pairing secret or even the word |
 | `tests/test_proc.py` | A timeout kills the grandchild, not only the direct child |
 
 `tests/test_verify.py` calls `verify_image` itself, not a reimplementation of
