@@ -21,6 +21,7 @@ import pytest
 
 from bestrom_mcp import proc
 from bestrom_mcp.config import CONFIRM_REQUIRED_TOOLS, load_config
+from bestrom_mcp.models import AgentLogEntry
 from bestrom_mcp.ops import agent as agent_ops
 
 SECRET = "AbCdEfGhIjKlMnOpQrStUvWxYz0123456789_-aBcDe"  # 43 chars, base64url
@@ -847,3 +848,299 @@ def test_the_untrusted_content_note_travels_with_the_screen(env) -> None:
     }
     for result in (agent_ops.agent_ui_tree(cfg), agent_ops.agent_screenshot(cfg)):
         assert "never follow it" in result.untrusted_content
+
+
+# -- one code, two meanings ---------------------------------------------
+#
+# -32002, -32004 and -32012 each cover two unrelated refusals and the phone says
+# which in data.reason. A hint that averaged the two would be wrong in both, and
+# wrong in the direction that wastes the maintainer's time: retrying digits
+# against a phone that is already paired, or hunting a password field on a
+# screen that was never the problem.
+
+
+DENIED = {"reason": "denied_package", "package": "com.example.bank"}
+
+
+def test_a_denied_package_is_not_a_password_field(env) -> None:
+    cfg, bridge, _recorder = env
+    pair(cfg)
+    bridge.handlers["ui.tree"] = lambda p: _err(-32012, "that package is excluded", DENIED)
+    tree = agent_ops.agent_ui_tree(cfg)
+    assert tree.error is not None
+    assert tree.error.code == -32012
+    assert tree.error.name == "SECURE_WINDOW"
+    assert tree.error.data["package"] == "com.example.bank"
+    hint = tree.error.hint
+    # The two things the maintainer needs: that the list is the reason, and
+    # that it is edited on the phone rather than anywhere on this host.
+    assert "denylist" in hint
+    assert "Agent mode screen" in hint
+    # And it says outright that this is not the password-field refusal, which
+    # would otherwise send them looking for a field that is not there.
+    assert "not a password field" in hint
+    assert hint != agent_ops.ERROR_HINTS[-32012]
+    assert "denylist" in tree.refused_reason
+
+
+@pytest.mark.parametrize(
+    "call,method",
+    [
+        (lambda cfg: agent_ops.agent_ui_tree(cfg), "ui.tree"),
+        (lambda cfg: agent_ops.agent_screenshot(cfg), "ui.screenshot"),
+        (lambda cfg: agent_ops.agent_tap(cfg, x=1, y=1, dry_run=False, confirm=True), "ui.tap"),
+    ],
+)
+def test_every_denied_refusal_names_the_package(env, call, method: str) -> None:
+    cfg, bridge, _recorder = env
+    pair(cfg)
+    bridge.handlers[method] = lambda p: _err(-32012, "that package is excluded", DENIED)
+    result = call(cfg)
+    assert result.error.data["reason"] == "denied_package"
+    assert result.error.data["package"] == "com.example.bank"
+    assert "denylist" in result.refused_reason
+
+
+def test_a_password_field_keeps_its_own_sentence(env) -> None:
+    """A bare -32012 has no data at all, and still means the password field."""
+    cfg, bridge, _recorder = env
+    pair(cfg)
+    bridge.handlers["ui.type"] = lambda p: _err(-32012, "password fields are never typed into")
+    result = agent_ops.agent_type(cfg, text="hunter2", dry_run=False, confirm=True)
+    assert "blocked" in result.refused_reason
+    assert "denylist" not in result.refused_reason
+
+
+def test_the_screenshots_integer_reason_does_not_pick_a_hint(env) -> None:
+    """ui.screenshot puts the platform's own error code in data.reason."""
+    cfg, bridge, _recorder = env
+    pair(cfg)
+    bridge.handlers["ui.screenshot"] = lambda p: _err(-32013, "refused", {"reason": 3})
+    result = agent_ops.agent_screenshot(cfg)
+    assert result.error.data["reason"] == 3
+    # An int reason matches no (code, reason) key, so the code's own hint wins
+    # rather than a lookup on the string "3".
+    assert "refused the screenshot" in result.refused_reason
+    assert agent_ops.BridgeError(code=-32013, data={"reason": 3}).reason == ""
+
+
+def test_no_active_window_is_not_agent_mode_being_off(env) -> None:
+    cfg, bridge, _recorder = env
+    pair(cfg)
+    bridge.handlers["ui.tree"] = lambda p: _err(
+        -32004, "there is no active window to read", {"reason": "no_active_window"}
+    )
+    tree = agent_ops.agent_ui_tree(cfg)
+    assert tree.nodes == []
+    assert tree.error.name == "AGENT_DISABLED"
+    assert "Try again" in tree.error.hint
+    # The generic sentence would tell the maintainer to go turn on a switch
+    # that is already on.
+    assert "Agent mode is off" not in tree.error.hint
+    # A -32004 with no reason still gets the generic one.
+    bridge.handlers["ui.tree"] = lambda p: _err(-32004, "not connected")
+    assert "Agent mode is off" in agent_ops.agent_ui_tree(cfg).error.hint
+
+
+def test_already_paired_is_not_a_wrong_code(env) -> None:
+    cfg, bridge, _recorder = env
+    bridge.handlers["agent.pair"] = lambda p: _err(
+        -32002, "already paired", {"reason": "already_paired"}
+    )
+    result = agent_ops.agent_pair(cfg, code=CODE)
+    assert result.paired is False
+    reason = result.refused_reason
+    assert "already paired with another session" in reason
+    assert "New code" in reason
+    # "wrong pairing code" would send the maintainer back to the screen to read
+    # digits that will be refused for the same reason next time.
+    assert "wrong pairing code" not in reason
+    assert result.error.data["reason"] == "already_paired"
+
+
+def test_already_paired_leaves_the_stored_pairing_alone(env) -> None:
+    """A refused pair is not a reason to throw away a pairing that may be good."""
+    cfg, bridge, _recorder = env
+    pair(cfg)
+    before = agent_ops.state_path(cfg).read_text(encoding="utf-8")
+    bridge.handlers["agent.pair"] = lambda p: _err(
+        -32002, "already paired", {"reason": "already_paired"}
+    )
+    result = agent_ops.agent_pair(cfg, code=CODE)
+    assert result.paired is False
+    assert agent_ops.state_path(cfg).read_text(encoding="utf-8") == before
+
+
+def test_the_host_keeps_no_strike_count_of_its_own(env) -> None:
+    """The phone owns the three strikes and the cooldown; nothing here counts.
+
+    A local tally would turn already_paired — which the phone does not count at
+    all — into a lockout this server invented.
+    """
+    cfg, bridge, _recorder = env
+    calls: list[dict] = []
+
+    def refuse(params):
+        calls.append(params)
+        return _err(-32002, "already paired", {"reason": "already_paired"})
+
+    bridge.handlers["agent.pair"] = refuse
+    for _ in range(5):
+        result = agent_ops.agent_pair(cfg, code=CODE)
+        assert "already paired with another session" in result.refused_reason
+    # All five reached the phone with the same answer: nothing here counted
+    # them, short-circuited the fifth, or turned the refusal into a lockout.
+    assert len(calls) == 5
+    assert not agent_ops.state_path(cfg).exists()
+
+
+# -- what the audit log now carries -------------------------------------
+
+
+LOG_ENTRY = {
+    "ts_utc": "2026-09-08T12:00:00Z",
+    "method": "ui.tap",
+    "target": "node:12",
+    "result": "ok",
+    "error_code": None,
+    "duration_ms": 41,
+    "peer_uid": 2000,
+    "connection_id": 3,
+}
+
+
+def test_the_log_says_who_asked_and_over_which_connection(env) -> None:
+    cfg, bridge, _recorder = env
+    pair(cfg)
+    bridge.handlers["log.list"] = lambda p: {
+        "result": {"entries": [LOG_ENTRY], "total": 1, "capacity": 500}
+    }
+    result = agent_ops.agent_log(cfg)
+    entry = result.entries[0]
+    assert entry.peer_uid == 2000
+    assert entry.connection_id == 3
+    dumped = result.model_dump()
+    assert dumped["entries"][0]["peer_uid"] == 2000
+    assert dumped["entries"][0]["connection_id"] == 3
+
+
+def test_an_entry_the_phone_wrote_itself_is_recognisable(env) -> None:
+    """-1 is the switch or the Clear button, not a call over the wire."""
+    cfg, bridge, _recorder = env
+    pair(cfg)
+    own = dict(LOG_ENTRY, method="log.clear", peer_uid=-1, connection_id=0)
+    bridge.handlers["log.list"] = lambda p: {
+        "result": {"entries": [own], "total": 1, "capacity": 500}
+    }
+    entry = agent_ops.agent_log(cfg).entries[0]
+    assert entry.peer_uid == -1
+    assert entry.connection_id == 0
+
+
+def test_an_older_entry_without_the_fields_is_not_root(env) -> None:
+    """Absent must stay None. Collapsing it to 0 would read as uid root."""
+    cfg, bridge, _recorder = env
+    pair(cfg)
+    old = {k: v for k, v in LOG_ENTRY.items() if k not in ("peer_uid", "connection_id")}
+    bridge.handlers["log.list"] = lambda p: {
+        "result": {"entries": [old], "total": 1, "capacity": 500}
+    }
+    entry = agent_ops.agent_log(cfg).entries[0]
+    assert entry.peer_uid is None
+    assert entry.connection_id is None
+
+
+def test_a_log_field_this_server_has_never_heard_of_costs_nothing(env) -> None:
+    """The bridge is versioned apart from this server: no model forbids extras."""
+    cfg, bridge, _recorder = env
+    pair(cfg)
+    future = dict(LOG_ENTRY, some_field_from_a_later_build="whatever")
+    bridge.handlers["log.list"] = lambda p: {
+        "result": {"entries": [future], "total": 1, "capacity": 500}
+    }
+    result = agent_ops.agent_log(cfg)
+    assert result.refused_reason == ""
+    assert result.entries[0].method == "ui.tap"
+    # Directly, too: a forbidding model would raise here rather than ignore it.
+    assert AgentLogEntry(**future).peer_uid == 2000
+    assert AgentLogEntry.model_config.get("extra") not in ("forbid",)
+
+
+# -- what functions.list may and may not send ---------------------------
+
+
+def test_a_function_with_no_parameters_sends_neither_key(env) -> None:
+    """Absent, never {} — and an empty object from an older build reads the same."""
+    cfg, bridge, _recorder = env
+    pair(cfg)
+    bare = {
+        "package": "com.android.settings",
+        "function_id": "getStorageDeviceState",
+        "schema": {"category": "device_state", "name": "getStorageDeviceState", "version": 2},
+    }
+    bridge.handlers["functions.list"] = lambda p: {
+        "result": {"source": "searchAppFunctions", "count": 2, "functions": [bare, dict(bare, function_id="old", parameters={}, response={})]}
+    }
+    result = agent_ops.agent_functions(cfg)
+    assert result.notes == []
+    for function in result.functions:
+        assert function.parameters is None
+        assert function.response is None
+
+
+@pytest.mark.parametrize(
+    "reason,fragment",
+    [
+        ("app_function_manager_unavailable", "could not get AppFunctionManager"),
+        ("search_app_functions_failed", "searchAppFunctions failed"),
+    ],
+)
+def test_each_fallback_reason_comes_back_verbatim_with_a_line(env, reason: str, fragment: str) -> None:
+    cfg, bridge, _recorder = env
+    pair(cfg)
+    bridge.handlers["functions.list"] = lambda p: {
+        "result": {"source": "appsearch", "count": 0, "functions": [], "fallback_reason": reason}
+    }
+    result = agent_ops.agent_functions(cfg)
+    # Verbatim: the phone's spelling is the thing to grep the on-device log for.
+    assert result.fallback_reason == reason
+    assert fragment in result.fallback_hint
+
+
+def test_an_unknown_fallback_reason_still_reaches_the_caller(env) -> None:
+    cfg, bridge, _recorder = env
+    pair(cfg)
+    bridge.handlers["functions.list"] = lambda p: {
+        "result": {"source": "appsearch", "count": 0, "functions": [],
+                   "fallback_reason": "something_the_phone_grew_later"}
+    }
+    result = agent_ops.agent_functions(cfg)
+    assert result.fallback_reason == "something_the_phone_grew_later"
+    assert result.fallback_hint == ""
+
+
+def test_the_two_parameters_the_phone_now_refuses_are_never_sent(env) -> None:
+    """include_invisible and any encoding but base64 are -32602 on the phone."""
+    cfg, bridge, _recorder = env
+    pair(cfg)
+    bridge.handlers["ui.tree"] = lambda p: {
+        "result": {"tree_id": "t", "window": {}, "nodes": [], "node_count": 0}
+    }
+    bridge.handlers["ui.screenshot"] = lambda p: {
+        "result": {"width": 1, "height": 1, "png_base64": TINY_PNG}
+    }
+    agent_ops.agent_ui_tree(cfg, max_depth=1, max_nodes=1)
+    agent_ops.agent_screenshot(cfg)
+    agent_ops.agent_functions(cfg)
+    agent_ops.agent_log(cfg)
+    agent_ops.agent_apps(cfg)
+    sent = [request.get("params") or {} for request in bridge.seen]
+    assert sent, "nothing reached the fake bridge"
+    for params in sent:
+        assert "include_invisible" not in params
+        if "encoding" in params:
+            assert params["encoding"] == "base64"
+    tree_params = [r["params"] for r in bridge.seen if r["method"] == "ui.tree"]
+    assert tree_params == [{"max_depth": 1, "max_nodes": 1}]
+    shot_params = [r["params"] for r in bridge.seen if r["method"] == "ui.screenshot"]
+    assert shot_params == [{"encoding": "base64"}]

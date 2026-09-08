@@ -127,8 +127,9 @@ ERROR_NAMES = {
     -32009: "ACTION_FAILED",
     -32010: "APP_FUNCTION_ERROR",
     -32011: "STALE_TREE",
-    # The bridge's own constant name. Its meaning is narrower than the name
-    # suggests: a password-field refusal and nothing else. "There is no active
+    # The bridge's own constant name, and it covers two unrelated refusals:
+    # a password field (no data at all) and a package on the phone's Agent mode
+    # denylist (data.reason=denied_package, data.package). "There is no active
     # window to read" arrives as -32004 with data.reason=no_active_window, and a
     # screen an app marked FLAG_SECURE is not refused at all — see the
     # device_agent_ui_tree and device_agent_screenshot descriptions.
@@ -146,7 +147,10 @@ ERROR_HINTS = {
         "Agent mode since. Read the six digits off the phone screen and run "
         "device_agent_pair"
     ),
-    -32002: "wrong pairing code. Three wrong codes make the phone show a new one",
+    -32002: (
+        "wrong pairing code. Three wrong codes make the phone show a new one. "
+        "data.reason=already_paired is a different refusal — see below"
+    ),
     -32003: "the phone refused it for want of confirm — its own gate, not this server's",
     -32004: (
         "Agent mode is off on the phone, or the accessibility service is not connected. "
@@ -161,9 +165,10 @@ ERROR_HINTS = {
     -32010: "the app function itself failed; data.code is the AppFunctionException code",
     -32011: "that tree_id is stale. Call device_agent_ui_tree again and use the new ids",
     -32012: (
-        "a password field. The phone refuses to type into one and never serialises "
-        "its text. This is 'blocked', not 'empty' — do not read it as an absence of "
-        "content, and do not retry it against the same node"
+        "a password field, or a package the maintainer excluded — data.reason says "
+        "which. A password field is never typed into and its text is never "
+        "serialised: that is 'blocked', not 'empty' — do not read it as an absence "
+        "of content, and do not retry it against the same node"
     ),
     -32013: (
         "the platform refused the screenshot; data.reason carries its own code. The "
@@ -175,6 +180,31 @@ ERROR_HINTS = {
     -32601: "this build of the app does not implement that method",
     -32602: "the phone rejected the parameters",
     -32603: "the app hit an internal error; check the on-device log with device_agent_log",
+}
+
+# Three codes mean more than one thing, and the phone says which in data.reason.
+# A single hint averaged over both meanings would be wrong in both, so a reason
+# that is named here picks the sentence and ERROR_HINTS is only the fallback.
+# The key is (code, reason); a reason the phone did not send, or one this table
+# does not know, falls through to the code's own hint.
+REASON_HINTS = {
+    (-32002, "already_paired"): (
+        "the phone is already paired with another session; press New code on the "
+        "Agent mode screen, then pair again. This is not a wrong code: nothing was "
+        "guessed, nothing counts against the phone's three-strike cooldown, and "
+        "trying other digits will not help"
+    ),
+    (-32004, "no_active_window"): (
+        "the bridge is up and the accessibility half is connected — there was simply "
+        "no foreground window to read at that instant. A transient state, not an "
+        "empty screen and not Agent mode being off. Try again"
+    ),
+    (-32012, "denied_package"): (
+        "data.package is on the phone's Agent mode package denylist, so the bridge "
+        "refuses to read, tap or capture it whatever this server asks. It is not a "
+        "password field and there is nothing to retry. The denylist is edited on the "
+        "phone, on the Agent mode screen"
+    ),
 }
 
 NOT_PAIRED = (
@@ -198,8 +228,18 @@ class BridgeError:
         return ERROR_NAMES.get(self.code, "")
 
     @property
+    def reason(self) -> str:
+        """``data.reason`` when it is a string, else "".
+
+        ui.screenshot puts the platform's integer error code in the same field,
+        so the type is checked rather than assumed.
+        """
+        value = self.data.get("reason")
+        return value if isinstance(value, str) else ""
+
+    @property
     def hint(self) -> str:
-        return ERROR_HINTS.get(self.code, "")
+        return REASON_HINTS.get((self.code, self.reason)) or ERROR_HINTS.get(self.code, "")
 
     def model(self) -> AgentBridgeError:
         return AgentBridgeError(
@@ -686,6 +726,13 @@ def agent_pair(cfg: Config, code: str) -> AgentPair:
         return AgentPair(refused_reason="code must be the six digits shown on the phone screen")
     reply = request(cfg, "agent.pair", {"code": code}, authenticate=False)
     if not reply.ok:
+        # No strike counter lives here, deliberately. The phone owns the three
+        # wrong codes and the cooldown, and -32002 has two meanings: a wrong
+        # code, and data.reason=already_paired, which is not a guess at all and
+        # which the phone itself does not count. A local tally would turn the
+        # second into a lockout this server invented. The stored pairing is left
+        # exactly as it was either way — a refused pair is not a reason to throw
+        # away a pairing that may still be good.
         return AgentPair(refused_reason=reply.problem(), error=reply.error_model())
     # code_expires_utc is the CODE's expiry. The code is single use: pairing
     # consumes it, and a second client needs the phone's "New code" button. What
@@ -714,6 +761,23 @@ def agent_pair(cfg: Config, code: str) -> AgentPair:
 # discovery can take 30 s. The default request timeout is 30 s too, which turns
 # a slow answer into a socket timeout at random.
 FUNCTIONS_TIMEOUT_S = 45
+
+# The two values the phone puts in fallback_reason, verbatim, each with the one
+# line that says what the list in hand is worth. The reason itself is passed
+# through untouched — a value this table does not know still reaches the caller,
+# it just arrives without a hint.
+FALLBACK_HINTS = {
+    "app_function_manager_unavailable": (
+        "the phone could not get AppFunctionManager at all, so this list is the raw "
+        "AppSearch index: enabled is assumed true and device_agent_execute will fail "
+        "with a system error until that service is back"
+    ),
+    "search_app_functions_failed": (
+        "searchAppFunctions failed or missed the phone's 10 s budget, so this list is "
+        "the raw AppSearch index: it can be stale or short, and enabled is assumed "
+        "true. Executing still works — try the list again before believing a gap"
+    ),
+}
 
 
 def agent_functions(cfg: Config, package: str = "", include_schema: bool = True) -> AgentFunctions:
@@ -752,14 +816,16 @@ def agent_functions(cfg: Config, package: str = "", include_schema: bool = True)
         except (ValidationError, TypeError, ValueError) as exc:
             name = str(entry.get("function_id") or entry.get("package") or f"entry {index}")
             notes.append(f"{name} came back in a shape this server cannot model: {exc}"[:300])
+    # Set when the phone had to fall back to the global AppSearch query. Without
+    # it "nothing is indexed" and "AppFunctionManager is broken" are the same
+    # answer: source=appsearch, count=0.
+    fallback = str(reply.result.get("fallback_reason") or "")
     return AgentFunctions(
         source=str(reply.result.get("source") or ""),
         count=int(reply.result.get("count") or len(functions)),
         functions=functions,
-        # Set when the phone had to fall back to the global AppSearch query.
-        # Without it "nothing is indexed" and "AppFunctionManager is broken" are
-        # the same answer: source=appsearch, count=0.
-        fallback_reason=str(reply.result.get("fallback_reason") or ""),
+        fallback_reason=fallback,
+        fallback_hint=FALLBACK_HINTS.get(fallback, ""),
         notes=notes,
     )
 
@@ -1146,6 +1212,11 @@ def agent_log(
         if not isinstance(entry, dict):
             continue
         code = entry.get("error_code")
+        # peer_uid and connection_id are newer than the first bridge build, so
+        # an entry without them is normal rather than malformed: absent stays
+        # None instead of collapsing to 0, which is root.
+        uid = entry.get("peer_uid")
+        conn = entry.get("connection_id")
         entries.append(
             AgentLogEntry(
                 ts_utc=str(entry.get("ts_utc") or ""),
@@ -1154,6 +1225,8 @@ def agent_log(
                 result=str(entry.get("result") or ""),
                 error_code=int(code) if isinstance(code, (int, float)) else None,
                 duration_ms=int(entry.get("duration_ms") or 0),
+                peer_uid=int(uid) if isinstance(uid, (int, float)) else None,
+                connection_id=int(conn) if isinstance(conn, (int, float)) else None,
             )
         )
     return AgentLog(

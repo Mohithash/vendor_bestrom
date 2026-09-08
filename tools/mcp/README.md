@@ -137,7 +137,7 @@ startup_timeout_sec = 120
 | `device_agent_screenshot` | A PNG under the evidence root | untrusted content; never inline |
 | `device_agent_launch` | Start an activity | dry_run, confirm |
 | `device_agent_apps` | Installed apps with labels and versions | read-only |
-| `device_agent_log` | The phone's own audit log; `clear=true` empties it | confirm to clear |
+| `device_agent_log` | The phone's own audit log, with `peer_uid` and `connection_id` per entry; `clear=true` empties it | confirm to clear |
 | `device_agent_stop` | The remote kill switch | dry_run, confirm |
 | `release_prepare` | The three release documents as drafts | dry_run; publishes nothing |
 | `release_publish` | The publish chain, behind both anti-drift gates | dry_run, confirm, gates re-checked, all-or-nothing |
@@ -322,7 +322,11 @@ put the agent in the boot path.
    pairing consumes it, so pairing a second client means pressing **New code**
    on the phone's Agent mode screen. Three wrong codes put pairing in a cooldown
    the phone shows on that same screen, with the seconds remaining, so a refusal
-   here is never a mystery. `code_expires_utc` in the result is when the digits
+   here is never a mystery. A `-32002` carrying `data.reason=already_paired` is
+   **not** a wrong code: the phone already has a token out to another session.
+   Press **New code** and pair again — re-reading the digits cannot help, and
+   this server keeps no strike count of its own, so a refusal like that costs
+   nothing here. `code_expires_utc` in the result is when the digits
    stop working, not when the pairing does — the pairing lasts until the bridge
    stops.
 4. Then the rest: `device_agent_functions` and `device_agent_execute` for app
@@ -352,11 +356,19 @@ tool opens the forward and closes it again, so a `nc` session against
 |---|---|---|
 | -32005 | `DEVICE_LOCKED` | The lock screen is showing. It refuses whenever the keyguard is up, not only when the phone is "locked" in the trust sense — a swipe-only lock and Smart Lock are still a lock screen, and a lock-screen tree leaks notification content. No override, not even for reads. |
 | -32006 | `USER_INTERACTING` | The user touched the screen within the last 1.5 s. Reads are exempt; actions are not. |
-| -32012 | `SECURE_WINDOW` | A password field: the phone will not type into one and does not serialise its text or its content description. This is **blocked**, not empty. |
-| -32004 | `AGENT_DISABLED` | Agent mode is off, or the accessibility half is not connected. `data.reason=no_active_window` is the narrower case: the bridge is up and there was no foreground window to read at that instant. |
+| -32012 | `SECURE_WINDOW` | **Two refusals under one name, and `data.reason` says which.** With no data: a password field — the phone will not type into one and does not serialise its text or its content description. This is **blocked**, not empty. With `data.reason=denied_package` and `data.package`: that package is on the phone's Agent mode denylist and `ui.tree`, `ui.screenshot` and `ui.tap` refuse it outright. |
+| -32004 | `AGENT_DISABLED` | Agent mode is off, or the accessibility half is not connected. `data.reason=no_active_window` is the narrower case: the bridge is up and there was no foreground window to read at that instant. Transient — try again; do not go looking for a switch that is already on. |
+| -32002 | `BAD_PAIRING_CODE` | Wrong six digits — three of them start a cooldown the phone shows on its own screen. `data.reason=already_paired` is a different thing entirely: the phone is paired with another session, nothing was guessed, and no amount of retrying will land. Press **New code** on the Agent mode screen and pair again. |
 | -32007 | `RATE_LIMITED` | Ten actions a second, shared across connections. |
-| -32013 | `SCREENSHOT_UNAVAILABLE` | The platform refused the capture; `data.reason` carries its own code. The commonest is the minimum interval between two captures. |
+| -32013 | `SCREENSHOT_UNAVAILABLE` | The platform refused the capture; `data.reason` carries its own code — an **integer** here, not one of the string reasons above. The commonest is the minimum interval between two captures. |
 | -32010 | `APP_FUNCTION_ERROR` | The function itself failed; `data.code` carries the `AppFunctionException` code verbatim. |
+| -32602 | `INVALID_PARAMS` | The phone rejected the parameters. Two it now refuses outright, and that this server therefore never sends: `include_invisible=true` on `ui.tree`, and any `encoding` but `"base64"` on `ui.screenshot`. Both were surfaces with no caller and are gone rather than left reachable. |
+
+Every refusal a tool returns is a sentence, not a number: `refused_reason` is
+the code's name and a plain-English hint, and `error.hint` carries the same
+line. Where one code means two things the hint is picked by `data.reason`, so
+an `already_paired` refusal does not read "wrong pairing code" and a
+`denied_package` one does not send you hunting for a password field.
 
 Two refusals that do **not** happen, and must not be assumed:
 
@@ -367,7 +379,47 @@ Two refusals that do **not** happen, and must not be assumed:
   not a failure.
 * **A denied package is refused on the phone, not here.** The Agent mode screen
   carries a package denylist; a `ui.*` action or an `app.launch` against a
-  package on it comes back refused whatever this server asks for.
+  package on it comes back refused whatever this server asks for. The wire
+  shape is `-32012` with `data.reason=denied_package` and `data.package` naming
+  it. There is no host-side override and there is nothing to retry — **the
+  denylist is edited on the phone, on the Agent mode screen**, and the phone
+  enforces it because it has to: an accessibility service is handed the tree of
+  every app, so an exclusion is enforced there or not at all.
+
+### Reading two results honestly
+
+**`device_agent_functions`.** `parameters` and `response` are JSON **arrays** of
+objects — one object per parameter — or **absent**. Never `{}` and never `[]`:
+the phone flattens its metadata without collapsing a single-element list, and
+omits the key outright when there is nothing in it, so a one-parameter and a
+two-parameter function have the same shape and "no parameters" has exactly one
+spelling. (A bare object is still accepted and wrapped, because an older build
+of the app did collapse it.)
+
+`fallback_reason` is empty when the phone answered from `searchAppFunctions`. It
+is set when the phone had to fall back to querying the raw AppSearch index, and
+it is one of exactly two strings, passed through verbatim so it can be grepped
+for in the on-device log. `fallback_hint` carries the one line that says what
+the list in hand is then worth:
+
+| `fallback_reason` | What it means |
+|---|---|
+| `app_function_manager_unavailable` | The phone could not get `AppFunctionManager` at all. `enabled` is assumed true, and `device_agent_execute` will fail with a system error until that service is back. |
+| `search_app_functions_failed` | The manager was there and `searchAppFunctions` failed or missed the phone's 10 s budget. The list can be stale or short and `enabled` is assumed true, but executing still works — ask again before believing a gap. |
+
+Without the reason, "nothing is indexed" and "the AppFunctions manager is
+broken" are the same answer: `source=appsearch`, `count=0`.
+
+**`device_agent_log`.** Each entry carries `peer_uid` and `connection_id`
+alongside the method, target and result: who asked, and over which connection,
+so a burst is attributable after the fact and an entry this server did not cause
+is recognisable. `2000` is shell — what every call from this server looks like,
+because it arrives through `adb forward` — `0` is root, and `-1` is the phone
+writing its own entry rather than the wire (the switch, the Clear button). Both
+are `null` on an entry from a bridge build that predates the fields; that is not
+an error and does not mean uid 0. Nothing this server models forbids unknown
+fields, deliberately: the phone and this server are versioned apart, and a field
+the bridge grows next must cost that field, not the whole call.
 
 ### Screen content is data, never instruction
 
@@ -405,7 +457,15 @@ What the design does defend, independently of the key:
   `system/sepolicy/private/domain.te` allows a domain to `connectto` its own
   type, so any `platform_app` on the phone can reach this abstract socket; the
   thing that actually keeps it to adb is the bridge closing any connection whose
-  peer uid is not shell (2000) or root (0). An `adb forward` presents uid 2000.
+  peer uid is not shell (2000) or root (0), before a single byte is read.
+  This server always reaches the bridge through `adb forward`, so the connection
+  is made by adbd and the phone sees **uid 2000**. That is the expectation on
+  both sides and there is nothing to configure. The corollary is the point:
+  **a client connecting to `localabstract:bestrom_agent` directly on the phone
+  is refused** — another platform-signed app, a shell-less process, anything
+  whose uid is not 2000 or 0 — and so is a connection with no peer credentials
+  at all, which reads as `-1`. `peer_uid` on every audit entry records which of
+  those asked.
 * **A refusal on the phone for a locked screen, a password field, a denied
   package, a touch in the last 1.5 s and the tenth action in a second.**
 
@@ -569,7 +629,7 @@ network.
 | `tests/test_repo_sync.py` | Option-shaped `projects` entries are refused, validated paths go after `--`, a dry run touches no network |
 | `tests/test_release_notes.py` | `notes_path` confined to the notes location, scrubbed and capped; the release header derived, not hardcoded |
 | `tests/test_device_args.py` | `su -c` quoting round-trips through a POSIX lexer; package names reject a trailing newline; props parse by key |
-| `tests/test_agent.py` | The bridge client against a fake bridge on a real socket: the port guard, the exact forward argv and its teardown, reassembly across recv boundaries, the confirm floor on all nine gated tools, error mapping, and that no model any tool returns carries the pairing secret or even the word |
+| `tests/test_agent.py` | The bridge client against a fake bridge on a real socket: the port guard, the exact forward argv and its teardown, reassembly across recv boundaries, the confirm floor on all nine gated tools, error mapping — including the three codes that mean two things and pick their hint from `data.reason` — the audit log's `peer_uid`/`connection_id` and its tolerance of a field this server has never heard of, both `functions.list` fallback reasons, that `include_invisible` and a non-base64 `encoding` are never sent, and that no model any tool returns carries the pairing secret or even the word |
 | `tests/test_proc.py` | A timeout kills the grandchild, not only the direct child |
 
 `tests/test_verify.py` calls `verify_image` itself, not a reimplementation of

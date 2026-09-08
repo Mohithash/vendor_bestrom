@@ -302,10 +302,13 @@ class AgentFunction(BaseModel):
     """One app function as the phone's metadata flattener emits it.
 
     ``parameters`` and ``response`` are JSON arrays of objects — one object per
-    parameter — or absent. The phone keeps a repeated property repeated even at
-    length one, so the type does not change between a one-parameter and a
-    two-parameter function. A bare object is still accepted and wrapped, because
-    an older build of the app collapsed a single-element array to the object.
+    parameter — or **absent**. Never ``{}`` and never ``[]``: the phone flattens
+    its metadata without the single-element collapse and omits the key outright
+    when the property is empty, so the type does not change between a
+    one-parameter and a two-parameter function, and "no parameters" is one
+    shape. A bare object is still accepted and wrapped, and an empty object or
+    list still reads as absent, because an older build of the app collapsed a
+    single-element array to the object.
     """
 
     package: str = ""
@@ -332,10 +335,16 @@ class AgentFunctions(BaseModel):
     source: str = ""
     count: int = 0
     functions: list[AgentFunction] = Field(default_factory=list)
-    # Why the phone fell back to the global AppSearch query. Empty means it did
-    # not: with it empty and count 0, nothing is indexed. With it set, the
-    # AppFunctionManager path failed and "no functions" says nothing.
+    # Why the phone fell back to the global AppSearch query, verbatim as the
+    # phone spelled it: "app_function_manager_unavailable" or
+    # "search_app_functions_failed". Empty means it did not fall back: with it
+    # empty and count 0, nothing is indexed. With it set, the AppFunctionManager
+    # path failed and "no functions" says nothing.
     fallback_reason: str = ""
+    # One line saying what the list in hand is worth, for the two reasons above.
+    # Empty for a reason this server does not recognise — the reason itself
+    # still comes through.
+    fallback_hint: str = ""
     # One line per entry the phone sent that this server could not model. A bad
     # entry is dropped and named here rather than failing the whole call.
     notes: list[str] = Field(default_factory=list)
@@ -417,12 +426,28 @@ class AgentApps(BaseModel):
 
 
 class AgentLogEntry(BaseModel):
+    """One line of the phone's audit ring.
+
+    Every field is optional and no model here sets ``extra="forbid"``, on
+    purpose: the phone and this server are versioned apart, and a field the
+    bridge grows next — as it grew ``peer_uid`` and ``connection_id`` — must
+    cost that field, not the whole ``device_agent_log`` call.
+    """
+
     ts_utc: str = ""
     method: str = ""
     target: str = ""
     result: str = ""
     error_code: int | None = None
     duration_ms: int = 0
+    # Who asked. 2000 is shell, which is what an `adb forward` presents and so
+    # what every call from this server looks like; 0 is root; -1 is the phone
+    # writing its own entry (the switch, the Clear button) rather than the wire.
+    # None means the entry came from a bridge build that predates the field.
+    peer_uid: int | None = None
+    # Which connection asked, so a burst of entries can be told apart after the
+    # fact. Absent on entries the phone wrote itself, and on older builds.
+    connection_id: int | None = None
 
 
 class AgentLog(BaseModel):
