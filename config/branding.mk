@@ -45,7 +45,8 @@ PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
     ro.bestrom.releasetype=$(BESTROM_BUILD_TYPE) \
     ro.bestrom.build.date=$(BESTROM_BUILD_DATE) \
     ro.bestrom.device=$(BESTROM_DEVICE) \
-    ro.bestrom.fingerprint=$(BESTROM_FINGERPRINT)
+    ro.bestrom.fingerprint=$(BESTROM_FINGERPRINT) \
+    org.bestrom.version=$(BESTROM_VERSION)
 
 # Build-time resource overlays. Rebrands the setup wizard and repoints the
 # updater at BestROM's OTA feed. vendor/voltage/overlay/common touches neither,
@@ -98,32 +99,32 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     BestromPreinstaller
 
-# NOTE: org.voltage.version cannot be redefined here. It is what the Settings
-# "About" version row displays (VoltageVersionPreference.kt:100) and what the
-# Updater reports as PROP_BUILD_VERSION (Constants.java:43), and it would be
-# natural to want it to carry the BestROM version. Two things prevent it:
+# NOTE: org.bestrom.version is assigned above and only above. It is what the
+# Updater reports as PROP_BUILD_VERSION (Constants.java) and what the Settings
+# "About" version row reads, so it carries the short BESTROM_VERSION - the same
+# value the OTA feed advertises for an offered build - instead of VoltageOS's
+# platform version.
 #
-#   1. build/soong/scripts/gen_build_prop.py rejects duplicate assignments
-#      outright - "error: found duplicate sysprop assignments". The first-wins
-#      behaviour in that file is the legacy path, gated behind
-#      BUILD_BROKEN_DUP_SYSPROP, and is not active.
-#   2. Overriding the VOLTAGEVERSION make variable instead does not work
-#      either: vendor/voltage/config/version.mk:16 assigns it with := and is
-#      inherited before this file.
+# vendor/voltage is a BestROM fork (Mohithash/vendor_voltage, branch
+# bestrom-a17), so the old assignment in its config/version.mk was removed
+# rather than worked around. That leaves exactly one assignment, which is what
+# build/soong/scripts/gen_build_prop.py's duplicate-sysprop check requires;
+# overriding the VOLTAGEVERSION make variable from here never worked, because
+# version.mk assigns it with := and is inherited first.
 #
-# So the About row shows the VoltageOS platform version, 6.1. The BestROM
-# version is carried by ro.bestrom.version above. Changing
-# the row's value would mean forking vendor/voltage.
-#
-# The rest of the ro.voltage.* set is deliberately NOT touched. It is plumbing,
-# not branding, and stripping it breaks real functionality:
-#   ro.voltage.device                       - the Updater substitutes this for
+# No ro.voltage.* property name exists any more. The equivalent set is
+# ro.bestrom.*, split over two files: this one defines
+# ro.bestrom.{version,releasetype,build.date,device,fingerprint}, and
+# vendor/voltage/config/version.mk defines ro.bestrom.build.status,
+# ro.bestrom.platform_release_or_codename and the maintainer GPG pair. Those
+# are plumbing, not branding, and stripping them breaks real functionality:
+#   ro.bestrom.device                       - the Updater substitutes this for
 #                                             {device} in the OTA feed URL
 #                                             (Utils.java:145,154,160)
-#   ro.voltage.platform_release_or_codename - backuptool.sh:51 and
+#   ro.bestrom.platform_release_or_codename - backuptool.sh:51 and
 #                                             backuptool_ab.sh:59 grep it to
 #                                             guard addon.d restore over an OTA
-#   ro.voltage.build.status                 - read by Settings
+#   ro.bestrom.build.status                 - read by Settings
 #                                             VoltageMaintainerPreference and
 #                                             HomepageToastManager
 
