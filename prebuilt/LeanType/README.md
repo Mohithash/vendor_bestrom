@@ -39,33 +39,18 @@ reproduces the shipped source exactly:
     git clone https://github.com/LeanBitLab/LeanType -b v4.2.0 LeanType
     git -C LeanType am < patches/0001-Default-to-100-keyboard-height-and-width.patch
 
-> **Release gate, not yet met.** `https://github.com/Mohithash/LeanType` returns
-> **404** today (checked 2026-09-07); the fork exists only as a local clone with
-> no remote pointing at it. Until it is pushed, the offer this file and
-> `vendor/bestrom/README.md` both make is false, and no OTA or public build may
-> carry the keyboard.
+> **Source offer.** `https://github.com/Mohithash/LeanType` is public
+> (checked 2026-09-08): branch `bestrom-17` is the fork commit above
+> (`f8c5ceb0`), `main` mirrors upstream `LeanBitLab/LeanType`. Upstream's
+> `main` has since moved to an untagged Kotlin rewrite with the same
+> `versionCode`; the prebuilt stays on the `v4.2.0` tag until upstream tags a
+> release, then `bestrom-17` is rebased onto it (a candidate rebase applies
+> with one trivial conflict in `Defaults.kt`).
 >
-> The patch above does not substitute for it. GPL-3.0 section 6 obliges whoever
-> conveys the binary to convey the corresponding source or a written offer that
-> resolves; someone who receives an OTA gets neither `vendor/bestrom` nor the
-> patch file, and pointing them at a third party's repository is not the same
-> thing as the offer being good.
->
-> Two steps, both the maintainer's - agents do not push:
->
->     git -C <LeanType fork clone> push \
->         https://github.com/Mohithash/LeanType bestrom-17:refs/heads/bestrom-17
->     curl -sI https://github.com/Mohithash/LeanType/tree/bestrom-17 | head -1
->
-> The GitHub repository may need creating first (fork `LeanBitLab/LeanType`, or
-> `gh repo create Mohithash/LeanType --public`). The fork commit carries no
-> trailers and is clean to publish as it stands.
->
-> One more thing the push does not cover: the person who receives the image
-> never reads this file. The same URL belongs somewhere they can reach it - an
-> About or Legal source-offer string, or the OTA release notes. The generated
-> NOTICE will carry the GPL-3.0 licence text, and a licence text is not an offer
-> of source.
+> Still open: the person who receives the image never reads this file. The
+> same URL belongs somewhere they can reach it - an About or Legal source-offer
+> string, or the OTA release notes. The generated NOTICE carries the GPL-3.0
+> licence text, and a licence text is not an offer of source.
 
 ## Fork
 
