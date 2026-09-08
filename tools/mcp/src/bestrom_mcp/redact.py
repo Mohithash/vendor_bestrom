@@ -60,6 +60,16 @@ _PATTERNS: list[tuple[re.Pattern[str], str]] = [
         re.compile(r"([\"']?token[\"']?\s*[=:]\s*[\"']?)[A-Za-z0-9_-]{43}", re.IGNORECASE),
         r"\1" + MASK,
     ),
+    # The Agent mode pairing code: six digits, and only where a nearby word says
+    # what they are. It is deliberately narrow — a bare \d{6} would mask build
+    # numbers, byte counts and timestamps everywhere in this server's output.
+    (
+        re.compile(
+            r"([\"']?\b(?:pairing[_ -]?code|pairing|code)\b[\"']?\s*(?:[=:]\s*)?[\"']?)\d{6}\b",
+            re.IGNORECASE,
+        ),
+        r"\1" + MASK,
+    ),
     # key=value secrets on a command line or in an env dump.
     (
         re.compile(

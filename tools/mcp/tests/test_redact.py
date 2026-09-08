@@ -27,6 +27,9 @@ SECRETS = [
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIabcdefghijklmnopqrstuvwxyz0123456789 sal@serverhive1",
         "AAAAC3NzaC1lZDI1NTE5",
     ),
+    ("pairing code: 481920", "481920"),
+    ('{"code": "481920", "client": "bestrom-mcp"}', "481920"),
+    ("agent.pair code=481920 refused", "481920"),
 ]
 
 
@@ -45,6 +48,11 @@ CLEAN = [
     "ro.build.fingerprint=BestROM/peridot/peridot:17/BP1A/1010:user/release-keys",
     "  87654321  /system/priv-app/MiuiCamera/MiuiCamera.apk",
     "avc: denied { read } for comm=\"camerahalserver\" scontext=u:r:hal_camera_default:s0",
+    # The pairing-code rule is six digits next to the word, and nothing else: a
+    # bare \\d{6} would eat build numbers, byte counts and error codes.
+    "Total 123456 objects, 654321 deltas",
+    "the function failed: code=1000 category=DENIED",
+    "the bridge answered error code -32012 to request 2",
 ]
 
 
