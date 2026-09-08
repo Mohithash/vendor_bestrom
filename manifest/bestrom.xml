@@ -31,6 +31,7 @@
   <project name="GuidixX/kernel_xiaomi_sm8635-modules" path="kernel/xiaomi/sm8635-modules" remote="gh" revision="16.2" />
   <project name="GuidixX/kernel_xiaomi_sm8635-devicetrees" path="kernel/xiaomi/sm8635-devicetrees" remote="gh" revision="16.2" />
   <project name="packages_apps_Freezer" path="packages/apps/Freezer" remote="bestrom" />
+  <project name="packages_apps_Edge" path="packages/apps/Edge" remote="bestrom" />
   <project name="peridot-dev/android_device_xiaomi_peridot-miuicamera" path="device/xiaomi/peridot-miuicamera" remote="gh" revision="lineage-23.2" />
   <project name="NoPrincessHere/proprietary_vendor_xiaomi_peridot-miuicamera" path="vendor/xiaomi/peridot-miuicamera" remote="gl" revision="sixteen-qpr2" />
   <remove-project name="bootable_recovery" />
