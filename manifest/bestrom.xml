@@ -24,6 +24,8 @@
   <project name="packages_apps_Updater" path="packages/apps/Updater" remote="bestrom" />
   <remove-project name="packages_apps_Launcher3" />
   <project name="packages_apps_Launcher3" path="packages/apps/Launcher3" remote="bestrom" />
+  <remove-project name="packages_apps_Dialer" />
+  <project name="packages_apps_Dialer" path="packages/apps/Dialer" remote="bestrom" />
   <remove-project name="device_voltage_sepolicy" />
   <project name="device_voltage_sepolicy" path="device/voltage/sepolicy" remote="bestrom" />
   <project name="vendor_xiaomi_peridot" path="vendor/xiaomi/peridot" remote="bestrom" />
