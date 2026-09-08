@@ -36,6 +36,40 @@ Look and feel
     reads better on black and it is one less blended layer for the
     compositor.
   * Animation scales are untouched - still 1.0x.
+  * Settings looks like BestROM now. The homepage opens with a BESTROM
+    eyebrow carrying the ROM version, a large dot-matrix Settings title,
+    a 52dp search pill, and a card for the phone itself that opens
+    About phone.
+  * Every row on that page is its own rounded card with a 6dp gap, and
+    the coloured icon circles are gone. Each row shows the first letter
+    of its own name in a thin outlined ring; the letter comes from the
+    translated title, so it still works in Malayalam, Hindi, Arabic,
+    Chinese and Russian.
+  * Battery, Storage and Custom Tweaks show a value at the end of the
+    row - charge, space used and the ROM version. All three were already
+    being computed, so the page reads nothing new when it opens: no
+    account, app or Wi-Fi lookup was added.
+  * Sub-pages follow the same card language, and their titles use the
+    ROM body font instead of the one the collapsing toolbar names.
+  * The dark greys in Settings are deliberate: the hint, the row values
+    and the glyph rings sit below the usual text contrast because that
+    is what the design asks for. Light mode keeps the standard colours.
+    The whole restyle sits behind two config bools, so a device overlay
+    can turn it - or just the device card - back off.
+
+Branding
+  * The Updater's banner is BestROM's own mark instead of the gold
+    VoltageOS wordmark, which also takes 3.5 MB out of the app.
+  * The version numbers agree. The Updater's current-build chip and the
+    About phone version row both read a BestROM property now, not the
+    VoltageOS platform version: the chip shows 3.0 and About shows the
+    full build id.
+  * The status bar's ongoing-activity chip draws the BestROM dot-matrix
+    mark, so the toggle that offers it no longer shows another ROM's
+    logo.
+  * Custom Tweaks no longer fetches a Play Integrity profile from
+    VoltageOS's GitHub. The auto-updated pifsync source stays, so the
+    feature is unchanged apart from where the profile comes from.
 
 Camera
   * MiuiCamera is the camera again (com.android.camera, Xiaomi's port).
