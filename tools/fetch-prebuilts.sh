@@ -24,8 +24,10 @@ readonly TOOLS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly TREE_ROOT="$(cd "${TOOLS_DIR}/../../.." && pwd)"
 
 # name | destination relative to the tree root | url | sha256 | size in bytes
+# | attest: "github" (default) checks the release attestation, "sha256" is for
+#   assets built and published by BestROM itself, which carry none
 readonly PREBUILTS=(
-"CromiteWebView|vendor/bestrom/prebuilt/CromiteWebView/CromiteWebView.apk|https://github.com/uazo/cromite/releases/download/v148.0.7778.168-cb3baf14f52eb4365d017f640f85310735c19b79/arm64_SystemWebView.apk|dd690edc7ba909bfc095e798457cb874ab2d6ff1f63b980ed67cae5d725a8d14|297580352"
+"CromiteWebView|vendor/bestrom/prebuilt/CromiteWebView/CromiteWebView.apk|https://github.com/Mohithash/cromite/releases/download/v148.0.7778.168-bestrom.1/arm64_SystemWebView.apk|b83dc3b529d76d8c5be08caa3ecab9822d1aa40d298ec92380c5b540b5dd1b7d|297580352|sha256"
 )
 
 TMP=""
@@ -75,7 +77,7 @@ check_attestation() {
 }
 
 fetch_one() {
-    local name="$1" rel="$2" url="$3" want_sha="$4" want_size="$5"
+    local name="$1" rel="$2" url="$3" want_sha="$4" want_size="$5" attest="${6:-github}"
     local dest="${TREE_ROOT}/${rel}" got_sha got_size
 
     if [ -f "$dest" ] && [ "$(file_size "$dest")" = "$want_size" ] &&
@@ -115,7 +117,9 @@ fetch_one() {
         return 1
     fi
 
-    if ! check_attestation "$url" "$want_sha" "$name"; then
+    if [ "$attest" = "sha256" ]; then
+        echo "  ${name}: built by BestROM, sha256 pinned, no attestation to check"
+    elif ! check_attestation "$url" "$want_sha" "$name"; then
         cleanup
         return 1
     fi
@@ -132,7 +136,7 @@ fetch_one() {
 }
 
 main() {
-    local entry name rel url sha size failed=0
+    local entry name rel url sha size attest failed=0
 
     if ! command -v curl >/dev/null 2>&1; then
         err "curl is not installed"
@@ -145,8 +149,8 @@ main() {
 
     echo "fetch-prebuilts: tree ${TREE_ROOT}"
     for entry in "${PREBUILTS[@]}"; do
-        IFS='|' read -r name rel url sha size <<< "$entry"
-        if ! fetch_one "$name" "$rel" "$url" "$sha" "$size"; then
+        IFS='|' read -r name rel url sha size attest <<< "$entry"
+        if ! fetch_one "$name" "$rel" "$url" "$sha" "$size" "$attest"; then
             failed=$((failed + 1))
         fi
     done

@@ -5,86 +5,93 @@ Cromite's SystemWebView build, shipped instead of the AOSP prebuilt in
 
 | | |
 | --- | --- |
-| Upstream | https://github.com/uazo/cromite |
-| Release | `v148.0.7778.168-cb3baf14f52eb4365d017f640f85310735c19b79` (2026-05-21) |
-| Asset | https://github.com/uazo/cromite/releases/download/v148.0.7778.168-cb3baf14f52eb4365d017f640f85310735c19b79/arm64_SystemWebView.apk |
+| Source | https://github.com/Mohithash/cromite, branch `bestrom-148` (BestROM fork of https://github.com/uazo/cromite) |
+| Base | Cromite `v148.0.7778.168-cb3baf14f52eb4365d017f640f85310735c19b79` (Chromium 148.0.7778.168) |
+| Release | `v148.0.7778.168-bestrom.1` |
+| Asset | https://github.com/Mohithash/cromite/releases/download/v148.0.7778.168-bestrom.1/arm64_SystemWebView.apk |
 | versionName / versionCode | 148.0.7778.168 / 777816801 |
 | Package | `com.android.webview` |
 | minSdk / targetSdk | 29 / 36 |
 | Size | 297,580,352 bytes |
+| Signer | BestROM WebView key (RSA-4096, certificate SHA-256 `ffa0f9a46ef930ce217540e6e5bf78a606d834e5cebf7d48e70e3e2057d59d90`) |
 | License | GPL-3.0 with Chromium's BSD-3-Clause base (`LICENSE`, `LICENSE.chromium`) |
 
 `CromiteWebView.apk` sha256
-`dd690edc7ba909bfc095e798457cb874ab2d6ff1f63b980ed67cae5d725a8d14`
+`b83dc3b529d76d8c5be08caa3ecab9822d1aa40d298ec92380c5b540b5dd1b7d`
 
 ## Source
 
-The binary is built from https://github.com/uazo/cromite at tag
-`v148.0.7778.168-cb3baf14f52eb4365d017f640f85310735c19b79`, which is the
-complete corresponding source for the GPL-3.0 parts of this APK. Cromite's
-patch set applies on top of Chromium 148.0.7778.168
-(https://chromium.googlesource.com/chromium/src at tag `148.0.7778.168`), whose
-BSD-3-Clause notice is in `LICENSE.chromium`.
+The binary is built by BestROM from https://github.com/Mohithash/cromite,
+branch `bestrom-148`, which is Cromite's release tag
+`v148.0.7778.168-cb3baf14f52eb4365d017f640f85310735c19b79` plus two patches
+of our own:
+
+- `WebView-leave-the-dangling-raw_ptr-detector-off.patch` - Cromite turns
+  Chromium's dangling raw_ptr detector on for every target and its verdict
+  is a crash of the process. In WebView that process is the host app, which
+  has no setting to turn it off; upstream WebView never enables it. The
+  WebView build disables the feature next to the other process-global
+  allocator features it already refuses.
+- `WebView-clear-the-Vulkan-provider-pointer-before-releasing-it.patch` -
+  the pointer the detector complained about: the Vulkan draw functor kept a
+  stale pointer to its context provider between `OnContextDestroyed` and
+  `OnDestroyed`. It is now cleared before the provider is released.
+
+That branch is the complete corresponding source for the GPL-3.0 parts of
+this APK. Cromite's patch set applies on top of Chromium 148.0.7778.168
+(https://chromium.googlesource.com/chromium/src at tag `148.0.7778.168`),
+whose BSD-3-Clause notice is in `LICENSE.chromium`.
+
+## Build
+
+Cromite's own recipe, outside GitHub Actions: Chromium at the tag with
+`gclient` (`target_os = android`, PGO profiles), the five dependency
+checkouts Cromite absorbs (`v8`, `third_party/skia`, `third_party/perfetto`,
+`third_party/boringssl/src`, `third_party/devtools-frontend/src`) folded
+into the top-level git, every entry of `build/cromite_patches_list.txt`
+applied with `git am`, then
+
+    gn gen --args="target_os=\"android\" target_cpu=\"arm64\" $(cat cromite/build/cromite.gn_args) system_webview_package_name=\"com.android.webview\" enable_trybot_verification=false" out/arm64_webview
+    autoninja -C out/arm64_webview system_webview_apk
+
+with `android_keystore_*` pointing at the BestROM WebView key. The unstripped
+`libwebviewchromium.so` of each release is kept with the build so device
+traces symbolize.
 
 ## Verification
 
-The shipped sha256 is an attested value, not just an observed one. GitHub
-publishes a Sigstore-signed release attestation for the artifacts of that tag,
-and the APK in this directory is one of its subjects:
-
-    curl -s https://api.github.com/repos/uazo/cromite/attestations/sha256:dd690edc7ba909bfc095e798457cb874ab2d6ff1f63b980ed67cae5d725a8d14
-
-    200, one attestation. Decoding bundle.dsseEnvelope.payload (base64,
-    application/vnd.in-toto+json):
-      predicateType  https://in-toto.io/attestation/release/v0.2
-      predicate      repository uazo/cromite, repositoryId 257841809,
-                     tag v148.0.7778.168-cb3baf14f52eb4365d017f640f85310735c19b79
-      subject        arm64_SystemWebView.apk
-                     sha256 dd690edc7ba909bfc095e798457cb874ab2d6ff1f63b980ed67cae5d725a8d14
-    Signing certificate: issuer O="GitHub, Inc." CN="Fulcio Intermediate l1",
-    subject O="GitHub, Inc." CN=Attester, SAN URI
-    https://dotcom.releases.github.com.
-
-So the exact bytes here are bound by a signature to that release of that
-repository. That is artifact provenance; key identity is a separate claim and
-it is still uncorroborated. Cromite publishes no APK signer fingerprint - the
-`49F37E74DEE483DCA2B991334FB5A0200787430D0B5F9A783DD5F13695E9517B` value in its
-README is the F-Droid *repository index* signing key, a different artifact -
-and `cromite.org` / `www.cromite.org` do not resolve from the build host. The
-signer below is therefore recorded so a future substitution is detectable, not
-matched against anything the project publishes.
+There is no GitHub attestation for this asset (it is not built by Actions),
+so `fetch-prebuilts.sh` carries it with the `sha256` mode: the digest in the
+`PREBUILTS` entry is the digest of the published asset, checked on every
+fetch, and the entry above records it. What binds the bytes to a source is
+the release on `Mohithash/cromite`, whose tag points at the branch that
+produced them.
 
     apksigner verify --print-certs CromiteWebView.apk
-    Verified using v2 scheme (APK Signature Scheme v2): true   (no v1, no v3)
-    certificate DN:          CN=CromiteOrg
-    certificate SHA-256:     633fa41d8211d6d0916a819b89668c6de92e64232da67f9d16fd81c3b7e923ff
-    certificate SHA-1:       f9c25477fb23ff80e93641270742d90fa58a9946
+    Verified using v2 scheme (APK Signature Scheme v2): true
+    certificate DN:          CN=BestROM WebView, O=BestROM, C=IN
+    certificate SHA-256:     ffa0f9a46ef930ce217540e6e5bf78a606d834e5cebf7d48e70e3e2057d59d90
 
-The APK is shipped byte for byte (`presigned` + `preprocessed`), so the
-installed copy hashes to the same value and keeps that v2 block.
+The key lives outside the tree with the other BestROM private keys. The APK
+is shipped byte for byte (`presigned` + `preprocessed`), so the installed
+copy hashes to the same value and keeps that v2 block; the framework accepts
+it as the WebView provider because it is preinstalled, and only a build
+signed with the same key can update it.
 
 ## Updating
 
-Cromite's SystemWebView asset comes from a different CI workflow than its
-browser releases and lags them; some releases carry no `arm64_SystemWebView.apk`
-at all (the v151 beta ships only `arm64_ChromePublic.apk`). Check before every
-BestROM release:
-
-1. Find the newest release at https://github.com/uazo/cromite/releases that
-   has an `arm64_SystemWebView.apk` asset, and download it.
-2. `sha256sum` it, then run the attestation call above with the new digest. It
-   must return 200 with subject `arm64_SystemWebView.apk` and a predicate whose
-   `repository` is `uazo/cromite` and whose `tag` is the release being taken. A
-   404 there means the artifact is not attested - stop.
-3. `apksigner verify --print-certs`: still `CN=CromiteOrg`, still cert SHA-256
-   `633fa41d...`. A changed key is a stop, not a note.
-4. Refresh `LICENSE` from that tag and `LICENSE.chromium` from the matching
-   Chromium tag.
-5. Move the `PREBUILTS` entry in `vendor/bestrom/tools/fetch-prebuilts.sh`,
-   `CromiteWebView.apk.sha256` and this file's version table, sha256 and tag
-   together, and re-check the size line in `vendor/bestrom/CHANGELOG.md`.
-   Then delete the local APK and re-run the script, so the new URL, size and
-   digest are proven before anyone else syncs.
+1. Rebase `bestrom-148` (or a new `bestrom-<major>` branch) onto Cromite's
+   next release tag that carries a WebView build; check that both patches
+   still apply and whether upstream took either of them.
+2. Build and sign as above; publish the APK as a release on
+   `Mohithash/cromite` whose tag names the branch.
+3. Move the `PREBUILTS` entry in `vendor/bestrom/tools/fetch-prebuilts.sh`
+   (URL, sha256, size) and this file's version table together; refresh
+   `LICENSE` and `LICENSE.chromium` from the tags. Then delete the local APK
+   and re-run the script, so the new URL, size and digest are proven before
+   anyone else syncs.
+4. `apksigner verify --print-certs`: still `CN=BestROM WebView`, still cert
+   SHA-256 `ffa0f9a4...`. A changed key is a stop, not a note.
 
 ## Network behaviour
 

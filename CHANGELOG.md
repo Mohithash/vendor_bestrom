@@ -1,6 +1,22 @@
 Unreleased (next build)
 =======================
 
+WebView
+  * The Cromite WebView is now built from BestROM's own fork of Cromite
+    (github.com/Mohithash/cromite, branch bestrom-148, same 148.0.7778.168
+    base) instead of taken from uazo's release. Two changes on top:
+    - WebView keeps Chromium's dangling-pointer detector off, as upstream
+      WebView does. Cromite enables it for every target; inside another
+      app's process its verdict is a crash of that app, and on Android 17
+      it fired whenever a page's renderer was replaced under the Vulkan
+      renderer, so Via and the licence viewer in Settings died within
+      seconds of browsing.
+    - The pointer it complained about is cleared before the object goes
+      away (the Vulkan draw functor kept a stale pointer to its context
+      provider between OnContextDestroyed and OnDestroyed).
+  * The APK is signed with a BestROM WebView key rather than Cromite's;
+    the ROM fetches it from the fork's GitHub release, sha256-pinned.
+
 Tooling
   * BestROM now ships an MCP server (vendor/bestrom/tools/mcp) so AI
     agents can sync, build, verify the image, capture device evidence
