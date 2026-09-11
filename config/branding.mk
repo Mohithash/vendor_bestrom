@@ -99,14 +99,9 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     BestromPreinstaller
 
-# Edge - gesture and key remapping (packages/apps/Edge), a native port of the
-# EdgeX Xposed module. A platform-signed privileged system_ext app; instead of
-# Xposed it is loaded into system_server by com.android.server.bestrom.EdgeLoader
-# at the end of InputManagerService.start(), and InputManagerService calls it on
-# the input filter and key interception paths.
-#
-# The privapp allowlist module comes along automatically via the required:
-# clause in packages/apps/Edge/Android.bp.
+# Edge: LEFT/RIGHT/BOTTOM always passthrough (ContinuousTouchPolicy); only TOP
+# may claim. Chat swipe-to-reply is fixed in the Goodix driver (edge filter
+# forced off outside game mode), not by omitting this package.
 PRODUCT_PACKAGES += \
     Edge
 
@@ -116,7 +111,7 @@ PRODUCT_PACKAGES += \
 # nothing else. No receiver, no job, no provider, no notification listener,
 # so it is not in the boot path and not in the idle drain budget.
 #
-# Its privapp allowlist (EXECUTE_APP_FUNCTIONS, WRITE_SECURE_SETTINGS) comes
+# Its privapp allowlist (EXECUTE_APP_FUNCTIONS, WRITE_SECURE_SETTINGS, READ_LOGS) comes
 # along automatically via the required: clause in
 # packages/apps/BestromAgent/Android.bp - it must not be listed separately. A
 # mismatch between that file and the app manifest aborts the boot on a build
