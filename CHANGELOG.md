@@ -2,6 +2,12 @@ Unreleased (next build)
 =======================
 
 Agent mode
+  * Other BestROM apps (Launcher, Dialer, …) can share the Brain you
+    configured without each storing an API key. BrainProxyService exposes
+    getStatus() and complete() behind com.bestrom.agent.permission.USE_BRAIN
+    (signature|privileged). The sealed key never leaves BestromAgent; link
+    BestromBrainApi and use BestromBrainClient. Agent mode does not need to
+    be on for those calls.
   * BestROM can be driven by an agent. Settings > Custom Tweaks >
     Advanced > Agent mode turns on a local bridge that a computer reaches
     over adb; whatever is driving it can read the screen, tap, swipe,
