@@ -1,6 +1,17 @@
 Unreleased (next build)
 =======================
 
+Edge
+  * Auto Game Mode when a CATEGORY_GAME app is foreground: Edge gestures
+    and key remaps mute, and the global input filter disarms (same as IME).
+    Manual Game Mode via gesture still works; leaving the game clears only
+    the auto hold.
+
+UI
+  * Shared BestromUiTokens (22dp cards, Space Grotesk / Doto). Nullroute,
+    Settings preference lists, QS pill icon radii, and Launcher QuickSpace
+    / all-apps search align to that Nothing-adjacent chrome.
+
 Agent mode
   * Other BestROM apps (Launcher, Dialer, …) can share the Brain you
     configured without each storing an API key. BrainProxyService exposes

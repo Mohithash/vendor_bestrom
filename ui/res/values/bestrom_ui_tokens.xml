@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     Copyright (C) 2026 The BestROM Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+<!--
+  Shared Nothing-adjacent tokens for BestROM apps that do not link SettingsLib.
+  Numbers match packages/apps/Settings/res/values/bestrom_settings.xml.
+-->
+<resources>
+
+    <!-- Surfaces (light). Apps may override night in their own values-night. -->
+    <color name="bestrom_ui_page_bg">#FFF7F7F7</color>
+    <color name="bestrom_ui_surface">#FFFFFFFF</color>
+    <color name="bestrom_ui_surface_high">#FFECECEC</color>
+    <color name="bestrom_ui_surface_highest">#FFE0E0E0</color>
+    <color name="bestrom_ui_on_surface">#FF121212</color>
+    <color name="bestrom_ui_on_surface_variant">#FF5A5A5A</color>
+    <color name="bestrom_ui_outline">#FFB0B0B0</color>
+    <color name="bestrom_ui_muted">#FF6A6A6A</color>
+    <color name="bestrom_ui_primary">#FF1A1A1A</color>
+    <color name="bestrom_ui_on_primary">#FFFFFFFF</color>
+
+    <dimen name="bestrom_ui_row_corner_radius">22dp</dimen>
+    <dimen name="bestrom_ui_card_corner_radius">22dp</dimen>
+    <dimen name="bestrom_ui_card_padding">16dp</dimen>
+    <dimen name="bestrom_ui_title_text_size">15sp</dimen>
+    <dimen name="bestrom_ui_body_text_size">14sp</dimen>
+    <dimen name="bestrom_ui_status_text_size">28sp</dimen>
+
+    <style name="TextAppearance.BestromUi.Title">
+        <item name="android:fontFamily">space-grotesk-semi-bold</item>
+        <item name="android:textSize">@dimen/bestrom_ui_title_text_size</item>
+        <item name="android:textColor">@color/bestrom_ui_on_surface</item>
+    </style>
+
+    <style name="TextAppearance.BestromUi.Body">
+        <item name="android:fontFamily">space-grotesk</item>
+        <item name="android:textSize">@dimen/bestrom_ui_body_text_size</item>
+        <item name="android:textColor">@color/bestrom_ui_on_surface_variant</item>
+    </style>
+
+    <style name="TextAppearance.BestromUi.Status">
+        <item name="android:fontFamily">doto</item>
+        <item name="android:textSize">@dimen/bestrom_ui_status_text_size</item>
+        <item name="android:textColor">@color/bestrom_ui_on_surface</item>
+    </style>
+
+</resources>

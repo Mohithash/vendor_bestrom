@@ -1,0 +1,17 @@
+//
+// Copyright (C) 2026 The BestROM Project
+//
+// Shared Nothing-adjacent UI tokens for BestROM apps (Nullroute, Launcher, …).
+// Keep SettingsLib out of this module so product apps can link it freely.
+//
+
+package {
+    default_applicable_licenses: ["Android-Apache-2.0"],
+}
+
+android_library {
+    name: "BestromUiTokens",
+    resource_dirs: ["res"],
+    sdk_version: "system_current",
+    min_sdk_version: "30",
+}
