@@ -1,6 +1,16 @@
 Unreleased (next build)
 =======================
 
+Input method
+  * LeanType no longer crashes when the suggestion strip is not created
+    yet. onUpdateSelection used to call View.isShown() on a null strip
+    and took the keyboard down.
+
+Nullroute
+  * The boot seeder now initialises the LZMA CRC tables before decoding
+    the baked baseline. Without that, every boot published nobaseline
+    and the resolver stayed at nomap (filter never armed).
+
 Edge
   * Auto Game Mode when a CATEGORY_GAME app is foreground: Edge gestures
     and key remaps mute, and the global input filter disarms (same as IME).

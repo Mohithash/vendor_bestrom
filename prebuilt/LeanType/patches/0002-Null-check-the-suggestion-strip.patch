@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BestROM <bestrom@localhost>
+Date: Sat, 12 Sep 2026 09:00:00 +0530
+Subject: [PATCH] LeanType: Null-check the suggestion strip
+
+onUpdateSelection inlines isShowingStripContainer() and then calls
+View.isShown() on mStripContainer. That view is still null until the
+input view is created, so the keyboard process died on a selection
+update (two fatals on first boot).
+
+---
+ .../helium314/keyboard/keyboard/KeyboardSwitcher.java | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/app/src/main/java/helium314/keyboard/keyboard/KeyboardSwitcher.java b/app/src/main/java/helium314/keyboard/keyboard/KeyboardSwitcher.java
+--- a/app/src/main/java/helium314/keyboard/keyboard/KeyboardSwitcher.java
++++ b/app/src/main/java/helium314/keyboard/keyboard/KeyboardSwitcher.java
+@@ -993,7 +993,9 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
+     }
+ 
+     public boolean isShowingStripContainer() {
+-        return mStripContainer.isShown();
++        // Null until onCreateInputView. Callers (and R8, which inlines this
++        // into LatinIME.onUpdateSelection) must not NPE on View.isShown().
++        return mStripContainer != null && mStripContainer.isShown();
+     }
+ 
+     public LinearLayout getStripContainer() {
+-- 
+2.43.0

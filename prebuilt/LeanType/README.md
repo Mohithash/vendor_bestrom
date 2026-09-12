@@ -10,15 +10,21 @@ top of `v4.2.0` defaults the keyboard to full size. See [Fork](#fork).
 | Fork | https://github.com/Mohithash/LeanType branch `bestrom-17`, commit `f8c5ceb048037627a56d53d0e37c85ccdac38ff1` |
 | Upstream | https://github.com/LeanBitLab/LeanType |
 | Base | `v4.2.0` (2026-09-05), commit `1383390cb9c48b859f56b6499210cbccbd91996f` |
-| Patch | `patches/0001-Default-to-100-keyboard-height-and-width.patch` |
+| Patch | `patches/0001-Default-to-100-keyboard-height-and-width.patch`, `patches/0002-Null-check-the-suggestion-strip.patch` |
 | Package | `com.leanbitlab.leantype` |
 | IME | `com.leanbitlab.leantype/helium314.keyboard.latin.LatinIME` |
 | minSdk / targetSdk | 23 / 35 |
-| Size | 12,474,651 bytes (unsigned; Soong signs it) |
+| Size | 13,071,329 bytes (unsigned; Soong signs it) |
 | License | GPL-3.0 (`LICENSE`; fork of HeliBoard / OpenBoard / AOSP LatinIME) |
 
 `LeanType.apk` sha256
-`de98f92e85e7e4ee0ee9f701fdef1feb32132777bb6560b715e22dc09e9eeca7`
+`c01dd89fbc615ffa64817fb8e3057042c0bec8e71b19679b4fc0dd8447060c31`
+
+The null-strip guard in `patches/0002` is applied to this binary at the
+dex level (the inlined `mStripContainer.isShown()` sites in
+`LatinIME.onUpdateSelection` and the input-view height path). A later
+`assembleStandardRelease` of `bestrom-17` with that patch should replace
+this APK; do not treat the current bytes as a clean Gradle output.
 
 The package name, `versionCode` 4200, `versionName` 4.2.0, `targetSdk` and the
 `arm64-v8a`/`armeabi-v7a` ABI set are identical to upstream's artifact; only the
