@@ -7,7 +7,7 @@ top of `v4.2.0` defaults the keyboard to full size. See [Fork](#fork).
 
 | | |
 | --- | --- |
-| Fork | https://github.com/Mohithash/LeanType branch `bestrom-17`, commit `f8c5ceb048037627a56d53d0e37c85ccdac38ff1` |
+| Fork | https://github.com/Mohithash/LeanType branch `bestrom-17`, commit `2d6aab7` |
 | Upstream | https://github.com/LeanBitLab/LeanType |
 | Base | `v4.2.0` (2026-09-05), commit `1383390cb9c48b859f56b6499210cbccbd91996f` |
 | Patch | `patches/0001-Default-to-100-keyboard-height-and-width.patch`, `patches/0002-Null-check-the-suggestion-strip.patch` |
@@ -34,16 +34,21 @@ two default values and the signature differ.
 
 The binary is built from https://github.com/Mohithash/LeanType branch
 `bestrom-17`, which is the complete corresponding source for this GPL-3.0 APK.
-That branch is `LeanBitLab/LeanType` tag `v4.2.0` plus the single commit below;
-`LICENSE` is the upstream text at that tag.
+That branch is `LeanBitLab/LeanType` tag `v4.2.0` plus the height default
+and the suggestion-strip null check; `LICENSE` is the upstream text at that
+tag.
 
-The same commit is also kept here as
-`patches/0001-Default-to-100-keyboard-height-and-width.patch`, so upstream tag
-`v4.2.0` (`1383390cb9c48b859f56b6499210cbccbd91996f`) plus that one patch
-reproduces the shipped source exactly:
+The height default is also kept here as
+`patches/0001-Default-to-100-keyboard-height-and-width.patch`. The null
+check is `patches/0002-Null-check-the-suggestion-strip.patch`. This APK
+carries that check as a dex edit of the previous binary, not a fresh
+Gradle assemble — see the sha256 note above. Upstream tag
+`v4.2.0` (`1383390cb9c48b859f56b6499210cbccbd91996f`) plus those patches
+reproduces the corresponding source:
 
     git clone https://github.com/LeanBitLab/LeanType -b v4.2.0 LeanType
     git -C LeanType am < patches/0001-Default-to-100-keyboard-height-and-width.patch
+    git -C LeanType am < patches/0002-Null-check-the-suggestion-strip.patch
 
 > **Source offer.** `https://github.com/Mohithash/LeanType` is public
 > (checked 2026-09-08): branch `bestrom-17` is the fork commit above
