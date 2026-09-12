@@ -12,6 +12,7 @@ package {
 android_library {
     name: "BestromUiTokens",
     resource_dirs: ["res"],
+    manifest: "AndroidManifest.xml",
     sdk_version: "system_current",
     min_sdk_version: "30",
 }
