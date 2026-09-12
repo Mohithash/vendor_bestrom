@@ -39,19 +39,22 @@
     <dimen name="bestrom_ui_body_text_size">14sp</dimen>
     <dimen name="bestrom_ui_status_text_size">28sp</dimen>
 
-    <style name="TextAppearance.BestromUi.Title">
+    <!-- Dot-separated style names need each parent segment present for aapt2. -->
+    <style name="TextAppearance.BestromUi" parent="@android:style/TextAppearance" />
+
+    <style name="TextAppearance.BestromUi.Title" parent="@style/TextAppearance.BestromUi">
         <item name="android:fontFamily">space-grotesk-semi-bold</item>
         <item name="android:textSize">@dimen/bestrom_ui_title_text_size</item>
         <item name="android:textColor">@color/bestrom_ui_on_surface</item>
     </style>
 
-    <style name="TextAppearance.BestromUi.Body">
+    <style name="TextAppearance.BestromUi.Body" parent="@style/TextAppearance.BestromUi">
         <item name="android:fontFamily">space-grotesk</item>
         <item name="android:textSize">@dimen/bestrom_ui_body_text_size</item>
         <item name="android:textColor">@color/bestrom_ui_on_surface_variant</item>
     </style>
 
-    <style name="TextAppearance.BestromUi.Status">
+    <style name="TextAppearance.BestromUi.Status" parent="@style/TextAppearance.BestromUi">
         <item name="android:fontFamily">doto</item>
         <item name="android:textSize">@dimen/bestrom_ui_status_text_size</item>
         <item name="android:textColor">@color/bestrom_ui_on_surface</item>
