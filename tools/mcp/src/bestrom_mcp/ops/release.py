@@ -215,6 +215,10 @@ def _ota_json(cfg: Config, name: str, sha: str, size: int, timestamp: int, versi
                 "datetime": timestamp,
                 "filename": name,
                 "id": sha,
+                # Updater.parseJsonUpdate requires "md5". The value is the
+                # sha256; the key name is historical and a missing key drops
+                # the whole entry, so the app shows no update.
+                "md5": sha,
                 "romtype": "official",
                 "size": size,
                 "url": url,
